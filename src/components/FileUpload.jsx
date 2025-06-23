@@ -4,16 +4,16 @@ const FileUpload = ({ onFileSelect }) => {
   const [fileNames, setFileNames] = useState([]);
 
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
+    const files = Array.from(e.target.files || []);
     const pdfs = files.filter((file) => file.type === "application/pdf");
 
-    if (pdfs.length === 0) {
+    if (pdfs.length < 1) {
       alert("Please select at least one valid PDF file.");
       return;
     }
 
     setFileNames(pdfs.map((f) => f.name));
-    onFileSelect(pdfs); // Send array of files
+    onFileSelect(pdfs); // Send array of PDF files
   };
 
   return (
