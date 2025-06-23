@@ -1,9 +1,13 @@
 import React from "react";
+import ToolMenu from "./components/ToolMenu";
 
 function App() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white text-gray-900 font-sans">
-      <h1 className="text-2xl font-bold">PDF Toolbox Web App</h1>
+    <div className="min-h-screen bg-gray-100 font-sans">
+      <header className="text-center py-5 text-xl font-bold text-blue-700">
+        PDF Toolbox Bot
+      </header>
+      <ToolMenu />
     </div>
   );
 }
