@@ -31,7 +31,12 @@ function App() {
       });
 
       const result = await response.json();
-      alert(result.message || "Success!");
+
+      if (result.download) {
+        window.open(result.download, "_blank");
+      } else {
+        alert(result.message || "Done!");
+      }
     } catch (error) {
       console.error(error);
       alert("Something went wrong. Please try again.");
