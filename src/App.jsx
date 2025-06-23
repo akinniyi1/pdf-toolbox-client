@@ -3,11 +3,11 @@ import ToolMenu from "./components/ToolMenu";
 import FileUpload from "./components/FileUpload";
 
 function App() {
-  const [uploadedFile, setUploadedFile] = useState(null);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
   const [selectedTool, setSelectedTool] = useState(null);
 
-  const handleFileSelect = (file) => {
-    setUploadedFile(file);
+  const handleFileSelect = (files) => {
+    setUploadedFiles(files);
     setSelectedTool(null); // Reset tool on new upload
   };
 
@@ -16,10 +16,12 @@ function App() {
   };
 
   const handleNext = async () => {
-    if (!uploadedFile || !selectedTool) return;
+    if (!uploadedFiles.length || !selectedTool) return;
 
     const formData = new FormData();
-    formData.append("file", uploadedFile);
+    uploadedFiles.forEach((file) => {
+      formData.append("files", file);
+    });
     formData.append("tool", selectedTool.name);
 
     try {
@@ -49,7 +51,7 @@ function App() {
       </header>
       <div className="max-w-xl mx-auto space-y-6">
         <FileUpload onFileSelect={handleFileSelect} />
-        {uploadedFile && (
+        {uploadedFiles.length > 0 && (
           <>
             <ToolMenu onSelect={handleToolClick} selected={selectedTool} />
             <div className="text-center">
