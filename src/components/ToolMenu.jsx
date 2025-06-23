@@ -11,13 +11,18 @@ const tools = [
   { name: "PDF to Image", emoji: "🖼️" }
 ];
 
-const ToolMenu = () => {
+const ToolMenu = ({ onSelect, selected }) => {
   return (
     <div className="grid grid-cols-2 gap-4 p-6">
       {tools.map((tool) => (
         <button
           key={tool.name}
-          className="bg-white shadow-md rounded-xl p-4 flex items-center gap-3 text-left hover:bg-blue-50 transition"
+          onClick={() => onSelect(tool)}
+          className={`bg-white rounded-xl p-4 flex items-center gap-3 text-left transition border ${
+            selected?.name === tool.name
+              ? "border-blue-600 ring-2 ring-blue-300"
+              : "border-transparent"
+          }`}
         >
           <span className="text-2xl">{tool.emoji}</span>
           <span className="text-sm font-medium">{tool.name}</span>
