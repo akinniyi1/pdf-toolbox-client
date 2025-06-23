@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ToolMenu from "./components/ToolMenu";
 import FileUpload from "./components/FileUpload";
 
@@ -9,6 +9,14 @@ function App() {
     setUploadedFile(file);
     console.log("Selected file:", file);
   };
+
+  // ✅ Telegram WebApp support
+  useEffect(() => {
+    if (window.Telegram && window.Telegram.WebApp) {
+      window.Telegram.WebApp.expand();
+      console.log("Telegram WebApp loaded ✅");
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans">
