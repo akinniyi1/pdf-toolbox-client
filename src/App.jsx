@@ -6,9 +6,14 @@ function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [selectedTool, setSelectedTool] = useState(null);
 
-  const handleFileSelect = (files) => {
-    setUploadedFiles(files);
-    setSelectedTool(null); // Reset tool on new upload
+  const handleFileAdd = (file) => {
+    setUploadedFiles((prev) => [...prev, file]);
+    setSelectedTool(null);
+  };
+
+  const handleReset = () => {
+    setUploadedFiles([]);
+    setSelectedTool(null);
   };
 
   const handleToolClick = (tool) => {
@@ -17,6 +22,12 @@ function App() {
 
   const handleNext = async () => {
     if (!uploadedFiles.length || !selectedTool) return;
+
+    // For merge, need >=2
+    if (selectedTool.name === "Merge PDF" && uploadedFiles.length < 2) {
+      alert("Select at least 2 PDFs to merge.");
+      return;
+    }
 
     const formData = new FormData();
     uploadedFiles.forEach((file) => {
@@ -29,9 +40,7 @@ function App() {
         method: "POST",
         body: formData,
       });
-
       const result = await response.json();
-
       if (result.download) {
         window.open(result.download, "_blank");
       } else {
@@ -55,7 +64,11 @@ function App() {
         PDF Toolbox Bot
       </header>
       <div className="max-w-xl mx-auto space-y-6">
-        <FileUpload onFileSelect={handleFileSelect} />
+        <FileUpload
+          files={uploadedFiles}
+          onFileAdd={handleFileAdd}
+          onReset={handleReset}
+        />
         {uploadedFiles.length > 0 && (
           <>
             <ToolMenu onSelect={handleToolClick} selected={selectedTool} />
