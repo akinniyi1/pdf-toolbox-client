@@ -15,10 +15,25 @@ function App() {
     setSelectedTool(tool);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!uploadedFile || !selectedTool) return;
-    alert(`Prepare to ${selectedTool.name} "${uploadedFile.name}"`);
-    // 👉 In next step, this will send the file to backend
+
+    const formData = new FormData();
+    formData.append("file", uploadedFile);
+    formData.append("tool", selectedTool.name);
+
+    try {
+      const response = await fetch("https://pdf-toolbox-server.onrender.com/process", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+      alert(result.message || "Success!");
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong. Please try again.");
+    }
   };
 
   useEffect(() => {
