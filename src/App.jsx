@@ -23,7 +23,6 @@ function App() {
   const handleNext = async () => {
     if (!uploadedFiles.length || !selectedTool) return;
 
-    // For merge, need >=2
     if (selectedTool.name === "Merge PDF" && uploadedFiles.length < 2) {
       alert("Select at least 2 PDFs to merge.");
       return;
@@ -59,28 +58,31 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 font-sans">
-      <header className="text-center py-5 text-xl font-bold text-blue-700">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 font-sans">
+      <header className="text-center py-6 text-2xl font-bold text-blue-700 shadow">
         PDF Toolbox Bot
       </header>
-      <div className="max-w-xl mx-auto space-y-6">
-        <FileUpload
-          files={uploadedFiles}
-          onFileAdd={handleFileAdd}
-          onReset={handleReset}
-        />
+      <div className="max-w-xl mx-auto mt-8 space-y-6 px-4">
+        <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-md">
+          <FileUpload
+            files={uploadedFiles}
+            onFileAdd={handleFileAdd}
+            onReset={handleReset}
+          />
+        </div>
+
         {uploadedFiles.length > 0 && (
-          <>
+          <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-md space-y-4">
             <ToolMenu onSelect={handleToolClick} selected={selectedTool} />
             <div className="text-center">
               <button
                 onClick={handleNext}
-                className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-xl shadow hover:bg-blue-700"
+                className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-xl shadow hover:bg-blue-700 transition"
               >
                 Next
               </button>
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>
