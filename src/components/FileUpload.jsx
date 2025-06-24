@@ -1,54 +1,63 @@
-import React from "react";
+import React, { useRef } from "react";
 
-const FileUpload = ({ files, onFileAdd, onReset }) => {
+function FileUpload({ files, onFileAdd, onReset }) {
+  const inputRef = useRef();
+
   const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file && file.type === "application/pdf") {
-      onFileAdd(file);
-    } else {
-      alert("Please select a valid PDF file.");
+    const selected = Array.from(e.target.files).filter((f) =>
+      f.name.toLowerCase().endsWith(".pdf")
+    );
+
+    if (selected.length === 0) {
+      alert("Please select at least one valid PDF file.");
+      return;
     }
+
+    for (let file of selected) {
+      onFileAdd(file);
+    }
+
+    // Reset input
     e.target.value = null;
   };
 
   return (
-    <div className="bg-white p-5 rounded-xl shadow-md text-center space-y-2">
-      {files.length === 0 ? (
-        <label className="cursor-pointer text-blue-600 font-semibold">
-          📤 Upload first PDF
-          <input
-            type="file"
-            accept=".pdf"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-        </label>
-      ) : (
-        <>
-          <p className="text-sm text-gray-700">
-            Uploaded: {files.map((f) => f.name).join(", ")}
-          </p>
-          <div className="space-x-2">
-            <label className="cursor-pointer text-blue-600 font-semibold">
-              ➕ Add another PDF
-              <input
-                type="file"
-                accept=".pdf"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-            </label>
-            <button
-              className="text-red-600 font-medium"
-              onClick={onReset}
-            >
-              Reset
-            </button>
-          </div>
-        </>
+    <div className="space-y-4 text-center">
+      <label
+        htmlFor="fileInput"
+        className="cursor-pointer block p-6 bg-white border border-dashed border-gray-300 rounded-xl shadow hover:bg-gray-50"
+      >
+        <p className="text-gray-600">📁 Click to upload PDF(s)</p>
+        <p className="text-xs text-gray-400">(multiple files supported)</p>
+      </label>
+      <input
+        type="file"
+        id="fileInput"
+        accept=".pdf"
+        multiple
+        className="hidden"
+        ref={inputRef}
+        onChange={handleFileChange}
+      />
+
+      {files.length > 0 && (
+        <div className="text-left bg-gray-50 rounded-lg p-3 shadow-inner border text-sm text-gray-700">
+          <p className="font-semibold mb-2">Selected Files:</p>
+          <ul className="list-disc pl-5 space-y-1">
+            {files.map((file, i) => (
+              <li key={i}>{file.name}</li>
+            ))}
+          </ul>
+          <button
+            onClick={onReset}
+            className="mt-2 text-xs text-red-500 underline hover:text-red-600"
+          >
+            Reset files
+          </button>
+        </div>
       )}
     </div>
   );
-};
+}
 
 export default FileUpload;
