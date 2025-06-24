@@ -1,16 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import FileUpload from "./FileUpload";
+import ProModal from "./ProModal";
 
 function ToolAction({ tool, onBack }) {
   const [files, setFiles] = useState([]);
   const [processing, setProcessing] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState("");
+  const [showProModal, setShowProModal] = useState(false);
+  const [usedCount, setUsedCount] = useState(0);
+
+  const isPro = localStorage.getItem("pdfToolboxPro") === "1";
+
+  useEffect(() => {
+    const count = parseInt(localStorage.getItem("pdfUses") || "0");
+    setUsedCount(count);
+  }, []);
 
   const handleFileAdd = (file) => {
     setFiles((prev) => {
-      if (prev.find((f) => f.name === file.name && f.size === file.size)) {
-        return prev;
-      }
+      if (prev.find((f) => f.name === file.name && f.size === file.size)) return prev;
       return [...prev, file];
     });
   };
@@ -24,6 +32,12 @@ function ToolAction({ tool, onBack }) {
     if (files.length < 1) return;
     if (tool.name === "Merge PDF" && files.length < 2) {
       alert("Select at least 2 PDFs to merge.");
+      return;
+    }
+
+    // 🛑 Trial Limit Check
+    if (!isPro && usedCount >= 3) {
+      setShowProModal(true);
       return;
     }
 
@@ -42,27 +56,32 @@ function ToolAction({ tool, onBack }) {
       const result = await resp.json();
       if (result.download) {
         setDownloadUrl(result.download);
-      } else if (result.error) {
-        alert(result.error);
+
+        if (!isPro) {
+          const newCount = usedCount + 1;
+          localStorage.setItem("pdfUses", newCount);
+          setUsedCount(newCount);
+        }
       } else {
         alert(result.message || "Done!");
       }
     } catch (err) {
       console.error(err);
-      alert("Something went wrong. Please try again.");
+      alert("Something went wrong.");
     } finally {
       setProcessing(false);
     }
   };
 
+  const handleUpgrade = () => {
+    setShowProModal(false);
+    // 🚧 TON wallet integration comes here next
+    alert("TON Wallet integration coming next...");
+  };
+
   return (
     <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-md space-y-4">
-      <button
-        onClick={onBack}
-        className="text-blue-600 underline text-sm"
-      >
-        ← Back
-      </button>
+      <button onClick={onBack} className="text-blue-600 underline text-sm">← Back</button>
 
       <h2 className="text-xl font-semibold text-center">{tool.name}</h2>
 
@@ -104,6 +123,10 @@ function ToolAction({ tool, onBack }) {
             Download {tool.name}
           </a>
         </div>
+      )}
+
+      {showProModal && (
+        <ProModal onClose={() => setShowProModal(false)} onUpgrade={handleUpgrade} />
       )}
     </div>
   );
