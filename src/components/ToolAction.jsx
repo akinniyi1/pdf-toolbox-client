@@ -7,7 +7,6 @@ function ToolAction({ tool, onBack }) {
   const [downloadUrl, setDownloadUrl] = useState("");
 
   const handleFileAdd = (file) => {
-    // avoid duplicates by name
     setFiles((prev) => {
       if (prev.find((f) => f.name === file.name && f.size === file.size)) {
         return prev;
@@ -22,7 +21,6 @@ function ToolAction({ tool, onBack }) {
   };
 
   const handleProcess = async () => {
-    // validation
     if (files.length < 1) return;
     if (tool.name === "Merge PDF" && files.length < 2) {
       alert("Select at least 2 PDFs to merge.");
@@ -65,29 +63,35 @@ function ToolAction({ tool, onBack }) {
       >
         ← Back
       </button>
-      <h2 className="text-xl font-semibold">{tool.name}</h2>
 
-      <FileUpload
-        files={files}
-        onFileAdd={handleFileAdd}
-        onReset={handleReset}
-      />
+      <h2 className="text-xl font-semibold text-center">{tool.name}</h2>
 
-      <button
-        onClick={handleProcess}
-        disabled={
-          processing ||
-          files.length < 1 ||
-          (tool.name === "Merge PDF" && files.length < 2)
-        }
-        className={`w-full mt-2 px-4 py-2 rounded-xl shadow text-white font-medium transition ${
-          processing
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-blue-600 hover:bg-blue-700"
-        }`}
-      >
-        {processing ? "Processing..." : "Process"}
-      </button>
+      <FileUpload files={files} onFileAdd={handleFileAdd} onReset={handleReset} />
+
+      <div className="text-center">
+        <button
+          onClick={handleProcess}
+          disabled={
+            processing ||
+            files.length < 1 ||
+            (tool.name === "Merge PDF" && files.length < 2)
+          }
+          className={`w-full mt-2 px-4 py-2 rounded-xl shadow text-white font-medium transition ${
+            processing
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
+        >
+          {processing ? (
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>Processing...</span>
+            </div>
+          ) : (
+            "Process"
+          )}
+        </button>
+      </div>
 
       {downloadUrl && (
         <div className="mt-4 text-center">
