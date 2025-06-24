@@ -1,35 +1,34 @@
 import React from "react";
 
 const tools = [
-  { name: "Merge PDF", emoji: "🧩" },
+  { name: "Merge PDF", emoji: "📎" },
   { name: "Split PDF", emoji: "✂️" },
-  { name: "Compress PDF", emoji: "📦" },
+  { name: "Compress PDF", emoji: "🗜️" },
   { name: "Protect PDF", emoji: "🔐" },
   { name: "Unlock PDF", emoji: "🔓" },
   { name: "PDF to Word", emoji: "📝" },
-  { name: "PDF to Excel", emoji: "📊" },
-  { name: "PDF to Image", emoji: "🖼️" }
+  { name: "PDF to Image", emoji: "📷" },
 ];
 
-const ToolMenu = ({ onSelect, selected }) => {
+function ToolMenu({ onSelect, selected }) {
   return (
-    <div className="grid grid-cols-2 gap-4 p-6">
+    <div className="grid grid-cols-2 gap-3">
       {tools.map((tool) => (
         <button
           key={tool.name}
           onClick={() => onSelect(tool)}
-          className={`bg-white rounded-xl p-4 flex items-center gap-3 text-left transition border ${
+          className={`p-4 text-left rounded-xl shadow border transition font-medium text-sm ${
             selected?.name === tool.name
-              ? "border-blue-600 ring-2 ring-blue-300"
-              : "border-transparent"
+              ? "bg-blue-600 text-white"
+              : "bg-white hover:bg-blue-50 text-gray-800"
           }`}
         >
-          <span className="text-2xl">{tool.emoji}</span>
-          <span className="text-sm font-medium">{tool.name}</span>
+          <span className="text-lg mr-2">{tool.emoji}</span>
+          {tool.name}
         </button>
       ))}
     </div>
   );
-};
+}
 
 export default ToolMenu;
