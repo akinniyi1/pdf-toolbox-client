@@ -1,9 +1,14 @@
 import React from "react";
-import { TonConnectButton, useTonConnectUI } from "@tonconnect/ui-react";
+import {
+  TonConnectButton,
+  useTonConnectUI,
+  useTonAddress,
+} from "@tonconnect/ui-react";
 
 function ProModal({ onClose, onUpgrade }) {
-  const [tonConnectUI, account] = useTonConnectUI();
-  const connected = !!account;
+  const [tonConnectUI] = useTonConnectUI();
+  const userAddress = useTonAddress();
+  const connected = Boolean(userAddress);
 
   const handleUpgrade = async () => {
     try {
@@ -11,7 +16,7 @@ function ProModal({ onClose, onUpgrade }) {
         validUntil: Math.floor(Date.now() / 1000) + 600,
         messages: [
           {
-            address: "UQD-iJ1whFaOz-42NRmJPJ9U7bKAjsXgPiaY-cqRiHeq8AKs", // your wallet
+            address: "UQD-iJ1whFaOz-42NRmJPJ9U7bKAjsXgPiaY-cqRiHeq8AKs", // Your TON wallet address
             amount: "500000000", // 0.5 TON in nanotons
           },
         ],
@@ -41,9 +46,7 @@ function ProModal({ onClose, onUpgrade }) {
 
         {!connected ? (
           <div className="text-center">
-            <TonConnectButton className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-xl shadow">
-              Connect TON Wallet
-            </TonConnectButton>
+            <TonConnectButton className="w-full justify-center" />
           </div>
         ) : (
           <button
