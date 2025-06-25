@@ -1,19 +1,48 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { tonConnect } from "../lib/ton";
 
 function ProModal({ onClose, onUpgrade }) {
-  const tonAddress = "YOUR_TON_WALLET_ADDRESS_HERE"; // 🔁 replace this
+  const [walletConnected, setWalletConnected] = useState(false);
 
-  const handleTonClick = () => {
-    const amount = 0.5;
-    const url = `https://tonkeeper.com/transfer/${tonAddress}?amount=${amount}&text=PDF%20Toolbox%20Pro`;
-    window.open(url, "_blank");
+  useEffect(() => {
+    try {
+      tonConnect.restoreConnection();
+      tonConnect.onStatusChange(wallet => {
+        setWalletConnected(!!wallet);
+      });
+    } catch (e) {
+      console.error("TON setup error:", e);
+    }
+  }, []);
 
-    setTimeout(() => {
-      // Simulate payment success
+  const handleConnect = () => {
+    try {
+      tonConnect.connectWallet();
+    } catch (e) {
+      alert("Failed to open wallet: " + e.message);
+    }
+  };
+
+  const handlePay = async () => {
+    try {
+      const tx = {
+        validUntil: Math.floor(Date.now() / 1000) + 600,
+        messages: [
+          {
+            address: "UQD-iJ1whFaOz-42NRmJPJ9U7bKAjsXgPiaY-cqRiHeq8AKs", // your TON address
+            amount: "500000000", // 0.5 TON
+            payload: undefined
+          }
+        ]
+      };
+
+      await tonConnect.sendTransaction(tx);
       localStorage.setItem("pdfToolboxPro", "1");
-      alert("✅ Pro unlocked! You now have full access.");
+      alert("✅ Payment sent. Pro unlocked!");
       onUpgrade();
-    }, 3000);
+    } catch (e) {
+      alert("❌ Payment failed or canceled.");
+    }
   };
 
   return (
@@ -21,19 +50,28 @@ function ProModal({ onClose, onUpgrade }) {
       <div className="bg-white rounded-2xl shadow-lg max-w-sm w-full p-6 space-y-4">
         <h2 className="text-xl font-bold text-center text-blue-700">Upgrade to Pro</h2>
         <p className="text-sm text-gray-600 text-center">
-          You’ve reached your free limit. Unlock full access for just <strong>0.5 TON</strong>:
+          Unlock unlimited tools for <strong>0.5 TON</strong>
         </p>
 
-        <button
-          onClick={handleTonClick}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-xl shadow"
-        >
-          🔓 Pay with Tonkeeper
-        </button>
+        {!walletConnected ? (
+          <button
+            onClick={handleConnect}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-xl shadow"
+          >
+            🔌 Connect TON Wallet
+          </button>
+        ) : (
+          <button
+            onClick={handlePay}
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-xl shadow"
+          >
+            🔓 Pay 0.5 TON to Unlock Pro
+          </button>
+        )}
 
         <button
           onClick={onClose}
-          className="w-full text-sm text-gray-500 hover:underline text-center mt-2"
+          className="w-full text-xs text-gray-400 hover:underline mt-2"
         >
           Maybe later
         </button>
