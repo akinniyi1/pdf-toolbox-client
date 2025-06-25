@@ -1,40 +1,19 @@
-import React, { useEffect, useState } from "react";
-import { tonConnect } from "../lib/ton";
+import React from "react";
 
 function ProModal({ onClose, onUpgrade }) {
-  const [walletConnected, setWalletConnected] = useState(false);
+  const tonAddress = "YOUR_TON_WALLET_ADDRESS_HERE"; // 🔁 replace this
 
-  useEffect(() => {
-    tonConnect.restoreConnection();
-    tonConnect.onStatusChange(wallet => {
-      setWalletConnected(!!wallet);
-    });
-  }, []);
+  const handleTonClick = () => {
+    const amount = 0.5;
+    const url = `https://tonkeeper.com/transfer/${tonAddress}?amount=${amount}&text=PDF%20Toolbox%20Pro`;
+    window.open(url, "_blank");
 
-  const handleConnect = () => {
-    tonConnect.connectWallet();
-  };
-
-  const handlePay = async () => {
-    const tx = {
-      validUntil: Math.floor(Date.now() / 1000) + 360,
-      messages: [
-        {
-          address: "UQD-iJ1whFaOz-42NRmJPJ9U7bKAjsXgPiaY-cqRiHeq8AKs", // your TON address
-          amount: "500000000", // 0.5 TON in nanotons
-          payload: undefined
-        }
-      ]
-    };
-
-    try {
-      await tonConnect.sendTransaction(tx);
+    setTimeout(() => {
+      // Simulate payment success
       localStorage.setItem("pdfToolboxPro", "1");
-      alert("✅ Payment sent. Pro unlocked!");
+      alert("✅ Pro unlocked! You now have full access.");
       onUpgrade();
-    } catch (e) {
-      alert("❌ Payment canceled or failed.");
-    }
+    }, 3000);
   };
 
   return (
@@ -42,24 +21,15 @@ function ProModal({ onClose, onUpgrade }) {
       <div className="bg-white rounded-2xl shadow-lg max-w-sm w-full p-6 space-y-4">
         <h2 className="text-xl font-bold text-center text-blue-700">Upgrade to Pro</h2>
         <p className="text-sm text-gray-600 text-center">
-          Unlock unlimited access for just <strong>0.5 TON</strong>
+          You’ve reached your free limit. Unlock full access for just <strong>0.5 TON</strong>:
         </p>
 
-        {!walletConnected ? (
-          <button
-            onClick={handleConnect}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-xl shadow"
-          >
-            🔌 Connect TON Wallet
-          </button>
-        ) : (
-          <button
-            onClick={handlePay}
-            className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-xl shadow"
-          >
-            🔓 Pay 0.5 TON to Unlock Pro
-          </button>
-        )}
+        <button
+          onClick={handleTonClick}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-xl shadow"
+        >
+          🔓 Pay with Tonkeeper
+        </button>
 
         <button
           onClick={onClose}
