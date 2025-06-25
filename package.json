@@ -11,7 +11,8 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@tonconnect/sdk": "^0.0.29"
+    "@tonconnect/ui-react": "^2.0.3",
+    "@tma.js/sdk": "^2.0.0-alpha.2"
   },
   "devDependencies": {
     "vite": "^4.0.0",
