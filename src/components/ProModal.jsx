@@ -2,20 +2,21 @@ import React from "react";
 import { TonConnectButton, useTonConnectUI } from "@tonconnect/ui-react";
 
 function ProModal({ onClose, onUpgrade }) {
-  const { account, sendTransaction } = useTonConnectUI();
-  const connected = Boolean(account);
+  const [tonConnectUI, account] = useTonConnectUI();
+  const connected = !!account;
 
   const handleUpgrade = async () => {
     try {
-      await sendTransaction({
+      await tonConnectUI.sendTransaction({
         validUntil: Math.floor(Date.now() / 1000) + 600,
         messages: [
           {
-            address: "UQD-iJ1whFaOz-42NRmJPJ9U7bKAjsXgPiaY-cqRiHeq8AKs",
+            address: "UQD-iJ1whFaOz-42NRmJPJ9U7bKAjsXgPiaY-cqRiHeq8AKs", // your wallet
             amount: "500000000", // 0.5 TON in nanotons
           },
         ],
       });
+
       localStorage.setItem("pdfToolboxPro", "1");
       alert("✅ Payment sent. You’re now Pro!");
       onUpgrade();
