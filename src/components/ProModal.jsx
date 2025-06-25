@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { tonConnect } from "../lib/ton"; // ✅ Correct relative path
+import { tonConnect } from "../lib/ton";
 
 function ProModal({ onClose, onUpgrade }) {
   const [connected, setConnected] = useState(false);
@@ -23,7 +23,6 @@ function ProModal({ onClose, onUpgrade }) {
           {
             address: "UQD-iJ1whFaOz-42NRmJPJ9U7bKAjsXgPiaY-cqRiHeq8AKs", // your TON address
             amount: "500000000", // 0.5 TON in nanotons
-            payload: undefined,
           },
         ],
       });
