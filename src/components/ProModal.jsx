@@ -1,27 +1,17 @@
-import React, { useEffect, useState } from "react";
-import { tonConnect } from "../lib/ton";
+import React from "react";
+import { TonConnectButton, useTonConnectUI } from "@tonconnect/ui-react";
 
 function ProModal({ onClose, onUpgrade }) {
-  const [connected, setConnected] = useState(false);
-
-  useEffect(() => {
-    tonConnect.restoreConnection();
-    tonConnect.onStatusChange(wallet => {
-      setConnected(!!wallet);
-    });
-  }, []);
-
-  const handleConnect = () => {
-    tonConnect.connectWallet();
-  };
+  const { account, sendTransaction } = useTonConnectUI();
+  const connected = Boolean(account);
 
   const handleUpgrade = async () => {
     try {
-      await tonConnect.sendTransaction({
+      await sendTransaction({
         validUntil: Math.floor(Date.now() / 1000) + 600,
         messages: [
           {
-            address: "UQD-iJ1whFaOz-42NRmJPJ9U7bKAjsXgPiaY-cqRiHeq8AKs", // your TON address
+            address: "UQD-iJ1whFaOz-42NRmJPJ9U7bKAjsXgPiaY-cqRiHeq8AKs",
             amount: "500000000", // 0.5 TON in nanotons
           },
         ],
@@ -49,12 +39,11 @@ function ProModal({ onClose, onUpgrade }) {
         </ul>
 
         {!connected ? (
-          <button
-            onClick={handleConnect}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-xl shadow"
-          >
-            🔌 Connect TON Wallet
-          </button>
+          <div className="text-center">
+            <TonConnectButton className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-xl shadow">
+              Connect TON Wallet
+            </TonConnectButton>
+          </div>
         ) : (
           <button
             onClick={handleUpgrade}
