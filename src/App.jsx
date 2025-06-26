@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ToolMenu from "./components/ToolMenu";
 import ToolAction from "./components/ToolAction";
+import WelcomePreview from "./components/WelcomePreview";
 
 function App() {
   const [selectedTool, setSelectedTool] = useState(null);
@@ -11,7 +12,6 @@ function App() {
       window.Telegram.WebApp.expand();
     }
 
-    // Hide preview after 2.5 seconds
     const timer = setTimeout(() => setShowPreview(false), 2500);
     return () => clearTimeout(timer);
   }, []);
@@ -32,13 +32,7 @@ function App() {
 
       <div className="max-w-xl mx-auto mt-8 px-4">
         {showPreview ? (
-          <div className="flex justify-center items-center">
-            <img
-              src="/preview.png"
-              alt="PDF merge preview"
-              className="rounded-2xl shadow-md w-full max-w-sm"
-            />
-          </div>
+          <WelcomePreview />
         ) : !selectedTool ? (
           <ToolMenu onSelect={handleSelect} selected={selectedTool} />
         ) : (
