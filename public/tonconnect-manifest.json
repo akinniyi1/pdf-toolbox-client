@@ -2,8 +2,10 @@
   "manifest_version": "1",
   "name": "PDF Toolbox Bot",
   "description": "Merge, compress, split and edit PDFs. Upgrade to Pro with TON.",
-  "icons": ["https://pdf-toolbox-client.onrender.com/icon.png"],
   "url": "https://pdf-toolbox-client.onrender.com",
+  "icons": [
+    "https://pdf-toolbox-client.onrender.com/icon.png"
+  ],
   "bridge_url": "https://bridge.tonapi.io/bridge",
   "terms_of_use_url": "https://pdf-toolbox-client.onrender.com/terms",
   "privacy_policy_url": "https://pdf-toolbox-client.onrender.com/privacy"
