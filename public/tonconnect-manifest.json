@@ -8,5 +8,12 @@
   ],
   "bridge_url": "https://bridge.tonapi.io/bridge",
   "terms_of_use_url": "https://pdf-toolbox-client.onrender.com/terms",
-  "privacy_policy_url": "https://pdf-toolbox-client.onrender.com/privacy"
+  "privacy_policy_url": "https://pdf-toolbox-client.onrender.com/privacy",
+  "supported_wallets": [
+    {
+      "name": "tonkeeper",
+      "bridge_url": "https://bridge.tonapi.io/bridge",
+      "universal_url": "https://app.tonkeeper.com/ton-connect"
+    }
+  ]
 }
