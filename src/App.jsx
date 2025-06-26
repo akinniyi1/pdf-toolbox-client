@@ -11,9 +11,6 @@ function App() {
     if (window.Telegram?.WebApp) {
       window.Telegram.WebApp.expand();
     }
-
-    const timer = setTimeout(() => setShowPreview(false), 2500);
-    return () => clearTimeout(timer);
   }, []);
 
   const handleSelect = (tool) => {
@@ -24,6 +21,10 @@ function App() {
     setSelectedTool(null);
   };
 
+  const handleVideoEnd = () => {
+    setShowPreview(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 font-sans">
       <header className="text-center py-6 text-2xl font-bold text-blue-700 shadow">
@@ -32,7 +33,7 @@ function App() {
 
       <div className="max-w-xl mx-auto mt-8 px-4">
         {showPreview ? (
-          <WelcomePreview />
+          <WelcomePreview onEnd={handleVideoEnd} />
         ) : !selectedTool ? (
           <ToolMenu onSelect={handleSelect} selected={selectedTool} />
         ) : (
