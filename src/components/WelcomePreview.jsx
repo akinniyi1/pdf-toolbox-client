@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 
-function WelcomePreview() {
+function WelcomePreview({ onEnd }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
@@ -21,10 +21,10 @@ function WelcomePreview() {
         <video
           src="/preview.mp4"
           autoPlay
-          loop
           muted
           playsInline
           className="w-full max-w-sm mx-auto rounded-xl"
+          onEnded={onEnd}
         />
       </motion.div>
     </motion.div>
