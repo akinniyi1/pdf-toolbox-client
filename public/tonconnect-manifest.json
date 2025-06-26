@@ -6,12 +6,5 @@
   "url": "https://pdf-toolbox-client.onrender.com",
   "bridge_url": "https://bridge.tonapi.io/bridge",
   "terms_of_use_url": "https://pdf-toolbox-client.onrender.com/terms",
-  "privacy_policy_url": "https://pdf-toolbox-client.onrender.com/privacy",
-  "supported_wallets": [
-    {
-      "name": "Tonkeeper",
-      "bridge_url": "https://bridge.tonapi.io/bridge",
-      "universal_url": "https://app.tonkeeper.com/ton-connect"
-    }
-  ]
+  "privacy_policy_url": "https://pdf-toolbox-client.onrender.com/privacy"
 }
