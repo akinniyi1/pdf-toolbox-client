@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import FileUpload from "./FileUpload";
 import ProModal from "./ProModal";
+import { getUserData, updateUserData } from "../lib/userAPI";
 
 function ToolAction({ tool, onBack }) {
   const [files, setFiles] = useState([]);
@@ -8,13 +9,25 @@ function ToolAction({ tool, onBack }) {
   const [downloadUrl, setDownloadUrl] = useState("");
   const [showProModal, setShowProModal] = useState(false);
   const [usedCount, setUsedCount] = useState(0);
+  const [isPro, setIsPro] = useState(false);
 
-  const isPro = localStorage.getItem("pdfToolboxPro") === "1";
+  const telegramUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
 
   useEffect(() => {
-    const count = parseInt(localStorage.getItem("pdfUses") || "0");
-    setUsedCount(count);
-  }, []);
+    async function fetchUserStatus() {
+      try {
+        const user = await getUserData(telegramUserId);
+        setUsedCount(user.count || 0);
+        setIsPro(user.pro || false);
+      } catch (err) {
+        console.error("Failed to fetch user:", err);
+      }
+    }
+
+    if (telegramUserId) {
+      fetchUserStatus();
+    }
+  }, [telegramUserId]);
 
   const handleFileAdd = (file) => {
     setFiles((prev) => {
@@ -35,7 +48,6 @@ function ToolAction({ tool, onBack }) {
       return;
     }
 
-    // 🛑 Trial Limit Check
     if (!isPro && usedCount >= 3) {
       setShowProModal(true);
       return;
@@ -53,14 +65,15 @@ function ToolAction({ tool, onBack }) {
         method: "POST",
         body: formData,
       });
+
       const result = await resp.json();
       if (result.download) {
         setDownloadUrl(result.download);
 
         if (!isPro) {
           const newCount = usedCount + 1;
-          localStorage.setItem("pdfUses", newCount);
           setUsedCount(newCount);
+          await updateUserData(telegramUserId, { count: newCount });
         }
       } else {
         alert(result.message || "Done!");
@@ -73,10 +86,10 @@ function ToolAction({ tool, onBack }) {
     }
   };
 
-  const handleUpgrade = () => {
+  const handleUpgrade = async () => {
     setShowProModal(false);
-    // 🚧 TON wallet integration comes here next
-    alert("TON Wallet integration coming next...");
+    await updateUserData(telegramUserId, { pro: true });
+    setIsPro(true);
   };
 
   return (
