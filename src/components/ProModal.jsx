@@ -1,9 +1,23 @@
 import React from "react";
+import axios from "axios";
 
 function ProModal({ onClose, onUpgrade }) {
-  const handleUpgrade = () => {
+  const telegramUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+
+  const handleUpgrade = async () => {
     const walletLink = `https://app.tonkeeper.com/transfer/UQD-iJ1whFaOz-42NRmJPJ9U7bKAjsXgPiaY-cqRiHeq8AKs?amount=500000000&text=PDF%20Toolbox%20Pro%20Upgrade`;
-    window.open(walletLink, "_blank"); // open Tonkeeper payment page
+    window.open(walletLink, "_blank");
+
+    // Wait 3 seconds, then mark as upgraded in backend
+    setTimeout(async () => {
+      if (telegramUserId) {
+        await axios.post(`https://pdf-toolbox-server.onrender.com/user/${telegramUserId}`, {
+          pro: true,
+        });
+      }
+      localStorage.setItem("pdfToolboxPro", "1");
+      onUpgrade();
+    }, 3000);
   };
 
   return (
