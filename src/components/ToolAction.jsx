@@ -10,34 +10,25 @@ function ToolAction({ tool, onBack }) {
   const [showProModal, setShowProModal] = useState(false);
   const [usedCount, setUsedCount] = useState(0);
   const [isPro, setIsPro] = useState(false);
-  const [userId, setUserId] = useState(null);
 
-  // Get Telegram user ID once
+  // 🧠 Use Telegram user ID or fallback
+  const telegramUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "TEST_USER";
+
   useEffect(() => {
-    const id = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
-    if (id) {
-      setUserId(id);
-    } else {
-      alert("User ID not detected. Please use inside Telegram.");
-    }
-  }, []);
-
-  // Fetch user usage data
-  useEffect(() => {
-    if (!userId) return;
-
-    async function fetchData() {
+    async function fetchUserStatus() {
       try {
-        const data = await getUserData(userId);
-        setUsedCount(data.count || 0);
-        setIsPro(data.pro || false);
-      } catch (e) {
-        console.error("Error fetching user:", e);
+        const user = await getUserData(telegramUserId);
+        setUsedCount(user.count || 0);
+        setIsPro(user.pro || false);
+      } catch (err) {
+        console.error("Failed to fetch user:", err);
       }
     }
 
-    fetchData();
-  }, [userId]);
+    if (telegramUserId) {
+      fetchUserStatus();
+    }
+  }, [telegramUserId]);
 
   const handleFileAdd = (file) => {
     setFiles((prev) => {
@@ -52,17 +43,19 @@ function ToolAction({ tool, onBack }) {
   };
 
   const handleProcess = async () => {
-    if (!userId) {
-      alert("User ID missing. Please open inside Telegram.");
-      return;
-    }
-
     if (files.length < 1) return;
     if (tool.name === "Merge PDF" && files.length < 2) {
       alert("Select at least 2 PDFs to merge.");
       return;
     }
 
+    // ✅ Check if Telegram ID is missing
+    if (!telegramUserId) {
+      alert("❗Please open this tool from Telegram bot to continue.");
+      return;
+    }
+
+    // 🚨 Trigger upgrade modal if over limit
     if (!isPro && usedCount >= 3) {
       setShowProModal(true);
       return;
@@ -76,20 +69,20 @@ function ToolAction({ tool, onBack }) {
     formData.append("tool", tool.name);
 
     try {
-      const res = await fetch("https://pdf-toolbox-server.onrender.com/process", {
+      const resp = await fetch("https://pdf-toolbox-server.onrender.com/process", {
         method: "POST",
         body: formData,
       });
 
-      const result = await res.json();
-
+      const result = await resp.json();
       if (result.download) {
         setDownloadUrl(result.download);
 
+        // 🔄 Update count in backend
         if (!isPro) {
           const newCount = usedCount + 1;
           setUsedCount(newCount);
-          await updateUserData(userId, { count: newCount });
+          await updateUserData(telegramUserId, { count: newCount });
         }
       } else {
         alert(result.message || "Done!");
@@ -104,13 +97,14 @@ function ToolAction({ tool, onBack }) {
 
   const handleUpgrade = async () => {
     setShowProModal(false);
-    await updateUserData(userId, { pro: true });
+    await updateUserData(telegramUserId, { pro: true });
     setIsPro(true);
   };
 
   return (
     <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-md space-y-4">
       <button onClick={onBack} className="text-blue-600 underline text-sm">← Back</button>
+
       <h2 className="text-xl font-semibold text-center">{tool.name}</h2>
 
       <FileUpload files={files} onFileAdd={handleFileAdd} onReset={handleReset} />
