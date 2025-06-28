@@ -11,9 +11,11 @@ function ToolAction({ tool, onBack }) {
   const [usedCount, setUsedCount] = useState(0);
   const [isPro, setIsPro] = useState(false);
 
-  const telegramUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+  const telegramUserId = window?.Telegram?.WebApp?.initDataUnsafe?.user?.id;
 
   useEffect(() => {
+    if (!telegramUserId) return;
+
     async function fetchUserStatus() {
       try {
         const user = await getUserData(telegramUserId);
@@ -24,9 +26,7 @@ function ToolAction({ tool, onBack }) {
       }
     }
 
-    if (telegramUserId) {
-      fetchUserStatus();
-    }
+    fetchUserStatus();
   }, [telegramUserId]);
 
   const handleFileAdd = (file) => {
@@ -42,6 +42,11 @@ function ToolAction({ tool, onBack }) {
   };
 
   const handleProcess = async () => {
+    if (!telegramUserId) {
+      alert("User ID not detected. Please use inside Telegram.");
+      return;
+    }
+
     if (files.length < 1) return;
     if (tool.name === "Merge PDF" && files.length < 2) {
       alert("Select at least 2 PDFs to merge.");
@@ -76,7 +81,7 @@ function ToolAction({ tool, onBack }) {
           await updateUserData(telegramUserId, { count: newCount });
         }
       } else {
-        alert(result.message || "Done!");
+        alert(result.message || "Processing failed.");
       }
     } catch (err) {
       console.error(err);
@@ -88,8 +93,13 @@ function ToolAction({ tool, onBack }) {
 
   const handleUpgrade = async () => {
     setShowProModal(false);
-    await updateUserData(telegramUserId, { pro: true });
-    setIsPro(true);
+    if (!telegramUserId) return;
+    try {
+      await updateUserData(telegramUserId, { pro: true });
+      setIsPro(true);
+    } catch (err) {
+      console.error("Upgrade failed:", err);
+    }
   };
 
   return (
