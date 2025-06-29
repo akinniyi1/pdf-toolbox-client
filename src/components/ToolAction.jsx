@@ -1,84 +1,142 @@
 import React, { useState, useEffect } from "react";
+import FileUpload from "./FileUpload";
+import ProModal from "./ProModal";
 
-function ToolAction({ tool, onBack, user, updateUser }) {
-  const [file, setFile] = useState(null);
-  const [message, setMessage] = useState("");
-  const [download, setDownload] = useState("");
-  const [error, setError] = useState("");
+function ToolAction({ tool, onBack, user }) {
+  const [files, setFiles] = useState([]);
+  const [processing, setProcessing] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState("");
+  const [showProModal, setShowProModal] = useState(false);
+  const [usedCount, setUsedCount] = useState(user.count || 0);
+  const [isPro, setIsPro] = useState(user.pro || false);
+  const [proUntil, setProUntil] = useState(user.proUntil || null);
+
+  useEffect(() => {
+    // Check if pro has expired
+    if (proUntil && new Date(proUntil) < new Date()) {
+      setIsPro(false);
+    }
+  }, [proUntil]);
+
+  const handleFileAdd = (file) => {
+    setFiles((prev) => {
+      if (prev.find((f) => f.name === file.name && f.size === file.size)) return prev;
+      return [...prev, file];
+    });
+  };
+
+  const handleReset = () => {
+    setFiles([]);
+    setDownloadUrl("");
+  };
 
   const handleProcess = async () => {
-    setError("");
-    setMessage("");
-    setDownload("");
-
-    if (!file) return setError("Please select a file");
-
-    if (!user.pro && user.count >= 3) {
-      return setError("Free limit reached. Upgrade to Pro.");
+    if (files.length < 1) return;
+    if (tool.name === "Merge PDF" && files.length < 2) {
+      alert("Select at least 2 PDFs to merge.");
+      return;
     }
 
+    if (!isPro && usedCount >= 3) {
+      setShowProModal(true);
+      return;
+    }
+
+    setProcessing(true);
+    setDownloadUrl("");
+
     const formData = new FormData();
-    formData.append("tool", tool);
-    formData.append("files", file);
+    files.forEach((file) => formData.append("files", file));
+    formData.append("tool", tool.name);
 
     try {
-      const res = await fetch("https://pdf-toolbox-server.onrender.com/process", {
+      const resp = await fetch("https://pdf-toolbox-server.onrender.com/process", {
         method: "POST",
         body: formData,
       });
-      const data = await res.json();
 
-      if (data.error) return setError(data.error);
+      const result = await resp.json();
+      if (result.download) {
+        setDownloadUrl(result.download);
 
-      setMessage(data.message);
-      setDownload(data.download);
-
-      if (!user.pro) {
-        const newCount = user.count + 1;
-        const updatedUser = { ...user, count: newCount };
-        await updateUser(updatedUser);
+        // Update usage count only if not pro
+        if (!isPro) {
+          const newCount = usedCount + 1;
+          setUsedCount(newCount);
+          await fetch(`https://pdf-toolbox-server.onrender.com/user/${user.email}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ count: newCount }),
+          });
+        }
+      } else {
+        alert(result.message || "Done!");
       }
     } catch (err) {
-      setError("Something went wrong. Try again.");
+      console.error(err);
+      alert("Something went wrong.");
+    } finally {
+      setProcessing(false);
     }
   };
 
   return (
-    <div className="bg-white p-4 rounded shadow">
-      <h2 className="text-xl font-bold mb-2">{tool}</h2>
-      <p className="mb-2">Logged in as: <b>{user.email}</b></p>
-      <p className="text-sm mb-4">
-        {user.pro ? "Pro User ✅" : `You've used ${user.count}/3 tools (Free limit)`}
-      </p>
+    <div className="bg-white p-6 rounded-xl shadow space-y-4">
+      <button onClick={onBack} className="text-blue-600 underline text-sm">
+        ← Back
+      </button>
 
-      <input type="file" onChange={(e) => setFile(e.target.files[0])} className="mb-4" />
-      {error && <p className="text-red-500 mb-2">{error}</p>}
-      {message && <p className="text-green-600 mb-2">{message}</p>}
-      {download && (
-        <a
-          href={download}
-          className="block bg-green-600 text-white text-center p-2 rounded mb-2"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Download Result
-        </a>
-      )}
+      <h2 className="text-xl font-semibold text-center">{tool.name}</h2>
 
-      <div className="flex gap-4">
+      <div className="text-sm text-gray-600 text-center">
+        ID: <span className="font-mono">{user.email}</span>
+        <br />
+        {isPro
+          ? `Pro Plan Active${proUntil ? " until " + new Date(proUntil).toLocaleDateString() : ""}`
+          : `You’ve used ${usedCount}/3 tools`}
+      </div>
+
+      <FileUpload files={files} onFileAdd={handleFileAdd} onReset={handleReset} />
+
+      <div className="text-center">
         <button
-          className="bg-blue-600 text-white px-4 py-2 rounded"
           onClick={handleProcess}
+          disabled={
+            processing ||
+            files.length < 1 ||
+            (tool.name === "Merge PDF" && files.length < 2)
+          }
+          className={`w-full mt-2 px-4 py-2 rounded-xl shadow text-white font-medium transition ${
+            processing
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
-          Process
-        </button>
-        <button
-          className="bg-gray-400 text-white px-4 py-2 rounded"
-          onClick={onBack}
-        >
-          Back
+          {processing ? (
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>Processing...</span>
+            </div>
+          ) : (
+            "Process"
+          )}
         </button>
       </div>
+
+      {downloadUrl && (
+        <div className="mt-4 text-center">
+          <a
+            href={downloadUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block bg-green-600 text-white px-6 py-2 rounded-xl shadow hover:bg-green-700 transition"
+          >
+            Download {tool.name}
+          </a>
+        </div>
+      )}
+
+      {showProModal && <ProModal email={user.email} onClose={() => setShowProModal(false)} />}
     </div>
   );
 }
