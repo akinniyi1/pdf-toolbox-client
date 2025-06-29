@@ -1,15 +1,38 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+import LoginRegister from "./LoginRegister";
 
-function WelcomePreview({ onEnd }) {
+function WelcomePreview({ onFinish }) {
+  const videoRef = useRef(null);
+  const [showLogin, setShowLogin] = useState(false);
+
+  useEffect(() => {
+    const handleEnded = () => setShowLogin(true);
+
+    const video = videoRef.current;
+    if (video) {
+      video.addEventListener("ended", handleEnded);
+    }
+
+    return () => {
+      if (video) {
+        video.removeEventListener("ended", handleEnded);
+      }
+    };
+  }, []);
+
+  if (showLogin) {
+    return <LoginRegister onLoginComplete={onFinish} />;
+  }
+
   return (
-    <div className="h-screen w-full flex items-center justify-center bg-black">
+    <div className="w-full h-screen bg-black flex items-center justify-center">
       <video
+        ref={videoRef}
         src="/preview.mp4"
-        className="w-full h-full object-cover"
         autoPlay
         muted
+        className="w-full h-full object-cover"
         playsInline
-        onEnded={onEnd}
       />
     </div>
   );
