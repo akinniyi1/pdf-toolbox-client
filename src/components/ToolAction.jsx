@@ -10,24 +10,27 @@ function ToolAction({ tool, onBack }) {
   const [showProModal, setShowProModal] = useState(false);
   const [usedCount, setUsedCount] = useState(0);
   const [isPro, setIsPro] = useState(false);
-  const [proExpire, setProExpire] = useState(null);
-  const userCode = localStorage.getItem("userCode");
+  const [proUntil, setProUntil] = useState(null);
+  const [userId, setUserId] = useState("");
 
   useEffect(() => {
-    async function fetchUser() {
-      if (!userCode) return;
-      try {
-        const user = await getUserData(userCode);
-        setUsedCount(user.count || 0);
-        setIsPro(user.pro || false);
-        setProExpire(user.expire || null);
-      } catch (err) {
-        console.error("User fetch failed:", err);
-      }
+    const storedId = localStorage.getItem("user_id");
+    if (storedId) {
+      setUserId(storedId);
+      fetchUser(storedId);
     }
+  }, []);
 
-    fetchUser();
-  }, [userCode]);
+  const fetchUser = async (id) => {
+    try {
+      const user = await getUserData(id);
+      setUsedCount(user.count || 0);
+      setIsPro(user.pro || false);
+      setProUntil(user.proUntil || null);
+    } catch (err) {
+      console.error("Error loading user:", err);
+    }
+  };
 
   const handleFileAdd = (file) => {
     setFiles((prev) => {
@@ -67,20 +70,21 @@ function ToolAction({ tool, onBack }) {
       });
 
       const result = await resp.json();
+
       if (result.download) {
         setDownloadUrl(result.download);
 
         if (!isPro) {
           const newCount = usedCount + 1;
           setUsedCount(newCount);
-          await updateUserData(userCode, { count: newCount });
+          await updateUserData(userId, { count: newCount });
         }
       } else {
         alert(result.message || "Done!");
       }
     } catch (err) {
       console.error(err);
-      alert("Something went wrong.");
+      alert("Something went wrong while processing your file.");
     } finally {
       setProcessing(false);
     }
@@ -90,29 +94,32 @@ function ToolAction({ tool, onBack }) {
     setShowProModal(false);
     const expiration = new Date();
     expiration.setDate(expiration.getDate() + 30);
+    const expireString = expiration.toISOString();
 
-    await updateUserData(userCode, {
-      pro: true,
-      expire: expiration.toISOString(),
-    });
-
-    setIsPro(true);
-    setProExpire(expiration.toISOString());
+    try {
+      await updateUserData(userId, { pro: true, proUntil: expireString });
+      setIsPro(true);
+      setProUntil(expireString);
+    } catch (err) {
+      alert("Upgrade failed.");
+    }
   };
 
   return (
     <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-md space-y-4">
-      <button onClick={onBack} className="text-blue-600 underline text-sm">← Back</button>
+      <button onClick={onBack} className="text-blue-600 underline text-sm">
+        ← Back
+      </button>
 
-      <h2 className="text-xl font-semibold text-center">{tool.name}</h2>
-
-      <p className="text-sm text-center">
-        <strong>ID:</strong> {userCode}
-        <br />
-        {isPro
-          ? `Pro user (expires: ${new Date(proExpire).toLocaleDateString()})`
-          : `You’ve used ${usedCount}/3 tools`}
-      </p>
+      <div className="text-center space-y-1">
+        <h2 className="text-xl font-semibold">{tool.name}</h2>
+        <p className="text-sm text-gray-600">ID: {userId}</p>
+        {isPro && proUntil ? (
+          <p className="text-green-600 text-sm">Pro until: {new Date(proUntil).toLocaleDateString()}</p>
+        ) : (
+          <p className="text-gray-600 text-sm">You’ve used {usedCount}/3 tools</p>
+        )}
+      </div>
 
       <FileUpload files={files} onFileAdd={handleFileAdd} onReset={handleReset} />
 
