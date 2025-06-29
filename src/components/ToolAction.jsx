@@ -1,169 +1,84 @@
 import React, { useState, useEffect } from "react";
-import FileUpload from "./FileUpload";
-import ProModal from "./ProModal";
-import { getUserData, updateUserData } from "../lib/userAPI";
 
-function ToolAction({ tool, onBack }) {
-  const [files, setFiles] = useState([]);
-  const [processing, setProcessing] = useState(false);
-  const [downloadUrl, setDownloadUrl] = useState("");
-  const [showProModal, setShowProModal] = useState(false);
-  const [usedCount, setUsedCount] = useState(0);
-  const [isPro, setIsPro] = useState(false);
-  const [proUntil, setProUntil] = useState(null);
-  const [userId, setUserId] = useState("");
-
-  useEffect(() => {
-    const storedId = localStorage.getItem("user_id");
-    if (storedId) {
-      setUserId(storedId);
-      fetchUser(storedId);
-    }
-  }, []);
-
-  const fetchUser = async (id) => {
-    try {
-      const user = await getUserData(id);
-      setUsedCount(user.count || 0);
-      setIsPro(user.pro || false);
-      setProUntil(user.proUntil || null);
-    } catch (err) {
-      console.error("Error loading user:", err);
-    }
-  };
-
-  const handleFileAdd = (file) => {
-    setFiles((prev) => {
-      if (prev.find((f) => f.name === file.name && f.size === file.size)) return prev;
-      return [...prev, file];
-    });
-  };
-
-  const handleReset = () => {
-    setFiles([]);
-    setDownloadUrl("");
-  };
+function ToolAction({ tool, onBack, user, updateUser }) {
+  const [file, setFile] = useState(null);
+  const [message, setMessage] = useState("");
+  const [download, setDownload] = useState("");
+  const [error, setError] = useState("");
 
   const handleProcess = async () => {
-    if (files.length < 1) return;
-    if (tool.name === "Merge PDF" && files.length < 2) {
-      alert("Select at least 2 PDFs to merge.");
-      return;
-    }
+    setError("");
+    setMessage("");
+    setDownload("");
 
-    if (!isPro && usedCount >= 3) {
-      setShowProModal(true);
-      return;
-    }
+    if (!file) return setError("Please select a file");
 
-    setProcessing(true);
-    setDownloadUrl("");
+    if (!user.pro && user.count >= 3) {
+      return setError("Free limit reached. Upgrade to Pro.");
+    }
 
     const formData = new FormData();
-    files.forEach((file) => formData.append("files", file));
-    formData.append("tool", tool.name);
+    formData.append("tool", tool);
+    formData.append("files", file);
 
     try {
-      const resp = await fetch("https://pdf-toolbox-server.onrender.com/process", {
+      const res = await fetch("https://pdf-toolbox-server.onrender.com/process", {
         method: "POST",
         body: formData,
       });
+      const data = await res.json();
 
-      const result = await resp.json();
+      if (data.error) return setError(data.error);
 
-      if (result.download) {
-        setDownloadUrl(result.download);
+      setMessage(data.message);
+      setDownload(data.download);
 
-        if (!isPro) {
-          const newCount = usedCount + 1;
-          setUsedCount(newCount);
-          await updateUserData(userId, { count: newCount });
-        }
-      } else {
-        alert(result.message || "Done!");
+      if (!user.pro) {
+        const newCount = user.count + 1;
+        const updatedUser = { ...user, count: newCount };
+        await updateUser(updatedUser);
       }
     } catch (err) {
-      console.error(err);
-      alert("Something went wrong while processing your file.");
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const handleUpgrade = async () => {
-    setShowProModal(false);
-    const expiration = new Date();
-    expiration.setDate(expiration.getDate() + 30);
-    const expireString = expiration.toISOString();
-
-    try {
-      await updateUserData(userId, { pro: true, proUntil: expireString });
-      setIsPro(true);
-      setProUntil(expireString);
-    } catch (err) {
-      alert("Upgrade failed.");
+      setError("Something went wrong. Try again.");
     }
   };
 
   return (
-    <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-md space-y-4">
-      <button onClick={onBack} className="text-blue-600 underline text-sm">
-        ← Back
-      </button>
+    <div className="bg-white p-4 rounded shadow">
+      <h2 className="text-xl font-bold mb-2">{tool}</h2>
+      <p className="mb-2">Logged in as: <b>{user.email}</b></p>
+      <p className="text-sm mb-4">
+        {user.pro ? "Pro User ✅" : `You've used ${user.count}/3 tools (Free limit)`}
+      </p>
 
-      <div className="text-center space-y-1">
-        <h2 className="text-xl font-semibold">{tool.name}</h2>
-        <p className="text-sm text-gray-600">ID: {userId}</p>
-        {isPro && proUntil ? (
-          <p className="text-green-600 text-sm">Pro until: {new Date(proUntil).toLocaleDateString()}</p>
-        ) : (
-          <p className="text-gray-600 text-sm">You’ve used {usedCount}/3 tools</p>
-        )}
-      </div>
-
-      <FileUpload files={files} onFileAdd={handleFileAdd} onReset={handleReset} />
-
-      <div className="text-center">
-        <button
-          onClick={handleProcess}
-          disabled={
-            processing ||
-            files.length < 1 ||
-            (tool.name === "Merge PDF" && files.length < 2)
-          }
-          className={`w-full mt-2 px-4 py-2 rounded-xl shadow text-white font-medium transition ${
-            processing
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
-          }`}
+      <input type="file" onChange={(e) => setFile(e.target.files[0])} className="mb-4" />
+      {error && <p className="text-red-500 mb-2">{error}</p>}
+      {message && <p className="text-green-600 mb-2">{message}</p>}
+      {download && (
+        <a
+          href={download}
+          className="block bg-green-600 text-white text-center p-2 rounded mb-2"
+          target="_blank"
+          rel="noopener noreferrer"
         >
-          {processing ? (
-            <div className="flex items-center justify-center space-x-2">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              <span>Processing...</span>
-            </div>
-          ) : (
-            "Process"
-          )}
+          Download Result
+        </a>
+      )}
+
+      <div className="flex gap-4">
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+          onClick={handleProcess}
+        >
+          Process
+        </button>
+        <button
+          className="bg-gray-400 text-white px-4 py-2 rounded"
+          onClick={onBack}
+        >
+          Back
         </button>
       </div>
-
-      {downloadUrl && (
-        <div className="mt-4 text-center">
-          <a
-            href={downloadUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block bg-green-600 text-white px-6 py-2 rounded-xl shadow hover:bg-green-700 transition"
-          >
-            Download {tool.name}
-          </a>
-        </div>
-      )}
-
-      {showProModal && (
-        <ProModal onClose={() => setShowProModal(false)} onUpgrade={handleUpgrade} />
-      )}
     </div>
   );
 }
