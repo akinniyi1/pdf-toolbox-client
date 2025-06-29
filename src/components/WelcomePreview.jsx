@@ -1,22 +1,16 @@
-import React, { useEffect, useRef } from "react";
-import welcomeVideo from "../assets/preview.mp4";
+import React from "react";
 
 function WelcomePreview({ onEnd }) {
-  const videoRef = useRef();
-
-  useEffect(() => {
-    const video = videoRef.current;
-    video.play();
-    video.onended = onEnd;
-    video.controls = false;
-  }, [onEnd]);
-
   return (
-    <div className="flex justify-center items-center h-[80vh]">
-      <video ref={videoRef} className="rounded-xl w-full max-w-md" muted playsInline>
-        <source src={welcomeVideo} type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
+    <div className="h-screen w-full flex items-center justify-center bg-black">
+      <video
+        src="/preview.mp4"
+        className="w-full h-full object-cover"
+        autoPlay
+        muted
+        playsInline
+        onEnded={onEnd}
+      />
     </div>
   );
 }
