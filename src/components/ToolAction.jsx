@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import FileUpload from "./FileUpload";
 import ProModal from "./ProModal";
-import { getUserData, updateUserData } from "../lib/userAPI";
 
 function ToolAction({ tool, onBack }) {
   const [files, setFiles] = useState([]);
@@ -10,16 +9,24 @@ function ToolAction({ tool, onBack }) {
   const [showProModal, setShowProModal] = useState(false);
   const [usedCount, setUsedCount] = useState(0);
   const [isPro, setIsPro] = useState(false);
-  const userId = localStorage.getItem("userId");
+  const [userId, setUserId] = useState("");
 
   useEffect(() => {
-    async function fetchUser() {
-      const data = await getUserData(userId);
-      setUsedCount(data.count || 0);
-      setIsPro(data.pro || false);
+    // Get or generate user ID
+    let id = localStorage.getItem("pdfUserId");
+    if (!id) {
+      id = "user_" + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem("pdfUserId", id);
     }
-    if (userId) fetchUser();
-  }, [userId]);
+    setUserId(id);
+
+    // Load usage
+    const storedCount = parseInt(localStorage.getItem("pdfUses") || "0");
+    const proStatus = localStorage.getItem("pdfToolboxPro") === "1";
+
+    setUsedCount(storedCount);
+    setIsPro(proStatus);
+  }, []);
 
   const handleFileAdd = (file) => {
     setFiles((prev) => {
@@ -34,7 +41,12 @@ function ToolAction({ tool, onBack }) {
   };
 
   const handleProcess = async () => {
-    if (!userId) return alert("User ID not found");
+    if (files.length < 1) return;
+    if (tool.name === "Merge PDF" && files.length < 2) {
+      alert("Select at least 2 PDFs to merge.");
+      return;
+    }
+
     if (!isPro && usedCount >= 3) {
       setShowProModal(true);
       return;
@@ -52,32 +64,30 @@ function ToolAction({ tool, onBack }) {
         method: "POST",
         body: formData,
       });
-
       const result = await resp.json();
+
       if (result.download) {
         setDownloadUrl(result.download);
 
         if (!isPro) {
           const newCount = usedCount + 1;
           setUsedCount(newCount);
-          await updateUserData(userId, { count: newCount });
+          localStorage.setItem("pdfUses", newCount.toString());
         }
       } else {
-        alert(result.message || "Failed");
+        alert(result.message || "Something went wrong.");
       }
     } catch (err) {
+      console.error(err);
       alert("Something went wrong.");
     } finally {
       setProcessing(false);
     }
   };
 
-  const handleUpgrade = async () => {
-    await updateUserData(userId, {
-      pro: true,
-      proUntil: Date.now() + 7 * 24 * 60 * 60 * 1000,
-    });
+  const handleUpgrade = () => {
     setIsPro(true);
+    localStorage.setItem("pdfToolboxPro", "1");
     setShowProModal(false);
   };
 
@@ -87,8 +97,10 @@ function ToolAction({ tool, onBack }) {
 
       <h2 className="text-xl font-semibold text-center">{tool.name}</h2>
 
-      <p className="text-center text-sm text-gray-600">
-        ID: {userId} <br /> You’ve used {usedCount}/3 tools {isPro && "(Pro User)"}
+      <p className="text-sm text-center text-gray-500 mt-1">
+        ID: <span className="font-mono">{userId}</span>
+        <br />
+        You’ve used <b>{usedCount}</b>/3 tools
       </p>
 
       <FileUpload files={files} onFileAdd={handleFileAdd} onReset={handleReset} />
@@ -102,10 +114,19 @@ function ToolAction({ tool, onBack }) {
             (tool.name === "Merge PDF" && files.length < 2)
           }
           className={`w-full mt-2 px-4 py-2 rounded-xl shadow text-white font-medium transition ${
-            processing ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+            processing
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
           }`}
         >
-          {processing ? "Processing..." : "Process"}
+          {processing ? (
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>Processing...</span>
+            </div>
+          ) : (
+            "Process"
+          )}
         </button>
       </div>
 
@@ -115,9 +136,9 @@ function ToolAction({ tool, onBack }) {
             href={downloadUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block bg-green-600 text-white px-6 py-2 rounded-xl shadow hover:bg-green-700"
+            className="inline-block bg-green-600 text-white px-6 py-2 rounded-xl shadow hover:bg-green-700 transition"
           >
-            Download
+            Download {tool.name}
           </a>
         </div>
       )}
