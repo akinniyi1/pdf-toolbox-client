@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import ToolMenu from "./components/ToolMenu";
 import ToolAction from "./components/ToolAction";
 import WelcomePreview from "./components/WelcomePreview";
-import UsernameScreen from "./components/UsernameScreen";
+import UsernameForm from "./components/UsernameForm";
 
 function App() {
   const [selectedTool, setSelectedTool] = useState(null);
-  const [step, setStep] = useState("preview"); // preview → username → tools
+  const [showPreview, setShowPreview] = useState(true);
+  const [username, setUsername] = useState(localStorage.getItem("username"));
 
   useEffect(() => {
     if (window.Telegram?.WebApp) {
@@ -14,20 +15,17 @@ function App() {
     }
   }, []);
 
-  const handleVideoEnd = () => {
-    setStep("username");
+  const handleSelect = (tool) => setSelectedTool(tool);
+  const handleBack = () => setSelectedTool(null);
+  const handleVideoEnd = () => setShowPreview(false);
+  const handleUsernameSet = (name) => {
+    localStorage.setItem("username", name);
+    localStorage.setItem("userId", generateId());
+    setUsername(name);
   };
 
-  const handleUsernameSubmit = () => {
-    setStep("tools");
-  };
-
-  const handleSelect = (tool) => {
-    setSelectedTool(tool);
-  };
-
-  const handleBack = () => {
-    setSelectedTool(null);
+  const generateId = () => {
+    return "user_" + Math.random().toString(36).substring(2, 12);
   };
 
   return (
@@ -37,12 +35,12 @@ function App() {
       </header>
 
       <div className="max-w-xl mx-auto mt-8 px-4">
-        {step === "preview" ? (
+        {showPreview ? (
           <WelcomePreview onEnd={handleVideoEnd} />
-        ) : step === "username" ? (
-          <UsernameScreen onSubmit={handleUsernameSubmit} />
+        ) : !username ? (
+          <UsernameForm onSubmit={handleUsernameSet} />
         ) : !selectedTool ? (
-          <ToolMenu onSelect={handleSelect} selected={selectedTool} />
+          <ToolMenu onSelect={handleSelect} />
         ) : (
           <ToolAction tool={selectedTool} onBack={handleBack} />
         )}
