@@ -1,73 +1,60 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 function ProModal({ onClose, onUpgrade }) {
-  const [step, setStep] = useState(1);
-  const tonAddress = "UQD-iJ1whFaOz-42NRmJPJ9U7bKAjsXgPiaY-cqRiHeq8AKs";
-  const tonAmount = 0.5;
+  const userCode = localStorage.getItem("userCode");
+  const TON_ADDRESS = "UQD-iJ1whFaOz-42NRmJPJ9U7bKAjsXgPiaY-cqRiHeq8AKs";
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
 
-  const paymentLink = `https://tonkeeper.com/transfer/${tonAddress}?amount=${tonAmount}&text=PDF%20Toolbox%20Upgrade`;
+  const deepLink = `https://tonkeeper.com/transfer/${TON_ADDRESS}?amount=0.5&text=PDFToolbox-${userCode}`;
 
-  const handlePaid = () => {
-    // Simulate payment confirmation (manual for now)
-    alert("Thanks for upgrading to Pro!");
-    onUpgrade();
+  const checkTransaction = async () => {
+    try {
+      const res = await fetch(`https://tonapi.io/v2/blockchain/accounts/${TON_ADDRESS}/transactions?limit=10`);
+      const data = await res.json();
+      const recent = data.transactions.find(
+        (tx) =>
+          tx.incoming &&
+          tx.incoming.comment === `PDFToolbox-${userCode}` &&
+          tx.incoming.value &&
+          parseFloat(tx.incoming.value) >= 0.5 * 10 ** 9
+      );
+      if (recent) {
+        setPaymentConfirmed(true);
+        onUpgrade();
+      } else {
+        alert("No payment found yet. Please wait or check again.");
+      }
+    } catch (err) {
+      alert("Error verifying payment.");
+      console.error(err);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-2xl w-[90%] max-w-md space-y-4 shadow-xl text-center">
-        <h2 className="text-xl font-bold text-blue-700">Upgrade to Pro</h2>
-
-        {step === 1 && (
-          <>
-            <p className="text-gray-600">
-              You’ve used all 3 free tools. Upgrade to unlock unlimited access.
-            </p>
-
-            <button
-              onClick={() => setStep(2)}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl mt-4"
-            >
-              Upgrade for {tonAmount} TON
-            </button>
-
-            <button
-              onClick={onClose}
-              className="text-gray-400 text-sm mt-2 underline"
-            >
-              Maybe later
-            </button>
-          </>
-        )}
-
-        {step === 2 && (
-          <>
-            <p className="text-gray-600">Use Tonkeeper to complete payment.</p>
-
-            <a
-              href={paymentLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl"
-            >
-              Pay 0.5 TON
-            </a>
-
-            <button
-              onClick={handlePaid}
-              className="w-full mt-3 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-xl"
-            >
-              I have paid
-            </button>
-
-            <button
-              onClick={() => setStep(1)}
-              className="text-gray-400 text-sm mt-2 underline"
-            >
-              ← Back
-            </button>
-          </>
-        )}
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-xl w-full max-w-sm space-y-4 text-center">
+        <h2 className="text-xl font-bold">Upgrade to Pro</h2>
+        <p>Pay <strong>0.5 TON</strong> to unlock unlimited usage for 30 days.</p>
+        <a
+          href={deepLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
+        >
+          Pay 0.5 TON
+        </a>
+        <button
+          onClick={checkTransaction}
+          className="block w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+        >
+          I Have Paid
+        </button>
+        <button
+          onClick={onClose}
+          className="text-sm text-gray-500 hover:underline mt-2"
+        >
+          Maybe Later
+        </button>
       </div>
     </div>
   );
