@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import FileUpload from "./FileUpload";
 import ProModal from "./ProModal";
-import UsernamePrompt from "./UsernamePrompt";
 import { getUserData, updateUserData } from "../lib/userAPI";
 
 function ToolAction({ tool, onBack }) {
@@ -9,23 +8,23 @@ function ToolAction({ tool, onBack }) {
   const [processing, setProcessing] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState("");
   const [showProModal, setShowProModal] = useState(false);
-  const [usedCount, setUsedCount] = useState(0);
-  const [isPro, setIsPro] = useState(false);
-  const [username, setUsername] = useState(localStorage.getItem("pdfUsername") || "");
+  const [userData, setUserData] = useState(null);
+
+  const userId = localStorage.getItem("pdfToolboxUID");
 
   useEffect(() => {
-    async function fetchUserStatus() {
-      try {
-        const user = await getUserData(username);
-        setUsedCount(user.count || 0);
-        setIsPro(user.pro || false);
-      } catch (err) {
-        console.error("Failed to fetch user:", err);
+    const fetchUser = async () => {
+      if (userId) {
+        try {
+          const user = await getUserData(userId);
+          setUserData(user);
+        } catch (err) {
+          console.error("Error fetching user data:", err);
+        }
       }
-    }
-
-    if (username) fetchUserStatus();
-  }, [username]);
+    };
+    fetchUser();
+  }, [userId]);
 
   const handleFileAdd = (file) => {
     setFiles((prev) => {
@@ -40,16 +39,19 @@ function ToolAction({ tool, onBack }) {
   };
 
   const handleProcess = async () => {
-    if (!username) return;
+    if (!userData || !userId) return;
+
+    const isPro = userData.pro && new Date(userData.proUntil) > new Date();
+    const usedCount = userData.count || 0;
+
+    if (!isPro && usedCount >= 3) {
+      setShowProModal(true);
+      return;
+    }
 
     if (files.length < 1) return;
     if (tool.name === "Merge PDF" && files.length < 2) {
       alert("Select at least 2 PDFs to merge.");
-      return;
-    }
-
-    if (!isPro && usedCount >= 3) {
-      setShowProModal(true);
       return;
     }
 
@@ -71,9 +73,9 @@ function ToolAction({ tool, onBack }) {
         setDownloadUrl(result.download);
 
         if (!isPro) {
-          const newCount = usedCount + 1;
-          setUsedCount(newCount);
-          await updateUserData(username, { count: newCount });
+          const updated = { ...userData, count: usedCount + 1 };
+          await updateUserData(userId, updated);
+          setUserData(updated);
         }
       } else {
         alert(result.message || "Done!");
@@ -87,23 +89,27 @@ function ToolAction({ tool, onBack }) {
   };
 
   const handleUpgrade = async () => {
-    await updateUserData(username, { pro: true });
-    setIsPro(true);
     setShowProModal(false);
+    const proUntil = new Date();
+    proUntil.setDate(proUntil.getDate() + 30); // 30-day Pro
+
+    const updated = { ...userData, pro: true, proUntil: proUntil.toISOString() };
+    await updateUserData(userId, updated);
+    setUserData(updated);
   };
 
-  if (!username) {
-    return <UsernamePrompt onSet={(u) => {
-      setUsername(u);
-      localStorage.setItem("pdfUsername", u);
-    }} />;
-  }
+  if (!userData) return null;
 
   return (
     <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-md space-y-4">
-      <div className="flex justify-between items-center">
-        <button onClick={onBack} className="text-blue-600 underline text-sm">← Back</button>
-        <span className="text-sm text-gray-500">👤 {username}</span>
+      <button onClick={onBack} className="text-blue-600 underline text-sm">← Back</button>
+
+      <div className="text-center text-sm text-gray-600">
+        <div>👤 <strong>{userData.username}</strong></div>
+        <div>ID: <code>{userId}</code></div>
+        {userData.pro && (
+          <div className="text-green-600">⭐ Pro till: {new Date(userData.proUntil).toLocaleDateString()}</div>
+        )}
       </div>
 
       <h2 className="text-xl font-semibold text-center">{tool.name}</h2>
@@ -119,7 +125,9 @@ function ToolAction({ tool, onBack }) {
             (tool.name === "Merge PDF" && files.length < 2)
           }
           className={`w-full mt-2 px-4 py-2 rounded-xl shadow text-white font-medium transition ${
-            processing ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+            processing
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
           }`}
         >
           {processing ? (
