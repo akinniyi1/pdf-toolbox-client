@@ -4,7 +4,6 @@ function ProModal({ onClose, onUpgrade }) {
   const handleUpgrade = () => {
     const walletLink = `https://app.tonkeeper.com/transfer/UQD-iJ1whFaOz-42NRmJPJ9U7bKAjsXgPiaY-cqRiHeq8AKs?amount=500000000&text=PDF%20Toolbox%20Pro%20Upgrade`;
     window.open(walletLink, "_blank");
-    // Assume payment made, mark as Pro
     onUpgrade();
   };
 
