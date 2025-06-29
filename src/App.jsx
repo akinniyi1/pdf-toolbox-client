@@ -1,51 +1,49 @@
-import React, { useState, useEffect } from "react";
-import ToolMenu from "./components/ToolMenu";
-import ToolAction from "./components/ToolAction";
+import React, { useEffect, useState } from "react";
 import WelcomePreview from "./components/WelcomePreview";
 import LoginRegister from "./components/LoginRegister";
+import ToolMenu from "./components/ToolMenu";
+import ToolAction from "./components/ToolAction";
 
 function App() {
+  const [stage, setStage] = useState("video"); // video -> auth -> tool
   const [selectedTool, setSelectedTool] = useState(null);
-  const [showPreview, setShowPreview] = useState(true);
-  const [loggedInUser, setLoggedInUser] = useState(null);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.expand();
+    const stored = localStorage.getItem("pdf_user");
+    if (stored) {
+      setUser(JSON.parse(stored));
+      setStage("tool");
     }
   }, []);
 
   const handleVideoEnd = () => {
-    setShowPreview(false);
+    if (!user) setStage("auth");
   };
 
-  const handleLogin = (user) => {
-    setLoggedInUser(user);
+  const handleAuthComplete = (user) => {
+    setUser(user);
+    localStorage.setItem("pdf_user", JSON.stringify(user));
+    setStage("tool");
   };
 
-  const handleSelect = (tool) => {
-    setSelectedTool(tool);
-  };
-
-  const handleBack = () => {
-    setSelectedTool(null);
-  };
+  const handleSelectTool = (tool) => setSelectedTool(tool);
+  const handleBack = () => setSelectedTool(null);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 font-sans">
-      <header className="text-center py-6 text-2xl font-bold text-blue-700 shadow">
-        PDF Toolbox Bot
+    <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-200 text-gray-800">
+      <header className="text-center py-4 text-2xl font-bold bg-white shadow">
+        PDF Toolbox
       </header>
 
-      <div className="max-w-xl mx-auto mt-8 px-4">
-        {showPreview ? (
-          <WelcomePreview onEnd={handleVideoEnd} />
-        ) : !loggedInUser ? (
-          <LoginRegister onLogin={handleLogin} />
-        ) : !selectedTool ? (
-          <ToolMenu onSelect={handleSelect} />
-        ) : (
-          <ToolAction tool={selectedTool} onBack={handleBack} user={loggedInUser} />
+      <div className="max-w-xl mx-auto mt-6 p-4">
+        {stage === "video" && <WelcomePreview onEnd={handleVideoEnd} />}
+        {stage === "auth" && <LoginRegister onComplete={handleAuthComplete} />}
+        {stage === "tool" && !selectedTool && (
+          <ToolMenu onSelect={handleSelectTool} />
+        )}
+        {stage === "tool" && selectedTool && (
+          <ToolAction tool={selectedTool} onBack={handleBack} user={user} />
         )}
       </div>
     </div>
