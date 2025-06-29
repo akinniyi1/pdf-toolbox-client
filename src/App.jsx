@@ -2,12 +2,11 @@ import React, { useState, useEffect } from "react";
 import ToolMenu from "./components/ToolMenu";
 import ToolAction from "./components/ToolAction";
 import WelcomePreview from "./components/WelcomePreview";
-import UsernameForm from "./components/UsernameForm";
+import UsernameScreen from "./components/UsernameScreen";
 
 function App() {
   const [selectedTool, setSelectedTool] = useState(null);
-  const [showPreview, setShowPreview] = useState(true);
-  const [hasUsername, setHasUsername] = useState(() => !!localStorage.getItem("username"));
+  const [step, setStep] = useState("preview"); // preview → username → tools
 
   useEffect(() => {
     if (window.Telegram?.WebApp) {
@@ -15,14 +14,20 @@ function App() {
     }
   }, []);
 
-  const handleSelect = (tool) => setSelectedTool(tool);
-  const handleBack = () => setSelectedTool(null);
-  const handleVideoEnd = () => setShowPreview(false);
-  const handleUsernameSet = (name) => {
-    const id = localStorage.getItem("userID") || crypto.randomUUID();
-    localStorage.setItem("userID", id);
-    localStorage.setItem("username", name);
-    setHasUsername(true);
+  const handleVideoEnd = () => {
+    setStep("username");
+  };
+
+  const handleUsernameSubmit = () => {
+    setStep("tools");
+  };
+
+  const handleSelect = (tool) => {
+    setSelectedTool(tool);
+  };
+
+  const handleBack = () => {
+    setSelectedTool(null);
   };
 
   return (
@@ -32,12 +37,12 @@ function App() {
       </header>
 
       <div className="max-w-xl mx-auto mt-8 px-4">
-        {showPreview ? (
+        {step === "preview" ? (
           <WelcomePreview onEnd={handleVideoEnd} />
-        ) : !hasUsername ? (
-          <UsernameForm onSubmit={handleUsernameSet} />
+        ) : step === "username" ? (
+          <UsernameScreen onSubmit={handleUsernameSubmit} />
         ) : !selectedTool ? (
-          <ToolMenu onSelect={handleSelect} />
+          <ToolMenu onSelect={handleSelect} selected={selectedTool} />
         ) : (
           <ToolAction tool={selectedTool} onBack={handleBack} />
         )}
