@@ -1,24 +1,17 @@
-import React, { useEffect, useRef } from "react";
+// components/WelcomePreview.jsx
+import React from "react";
+import videoFile from "../assets/preview.mp4";
 
 function WelcomePreview({ onEnd }) {
-  const videoRef = useRef(null);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (video) {
-      video.play();
-    }
-  }, []);
-
   return (
-    <div className="text-center">
+    <div className="w-full h-screen flex items-center justify-center bg-black">
       <video
-        ref={videoRef}
-        src="/welcome.mp4"
-        onEnded={onEnd}
-        className="w-full rounded-xl shadow-lg"
-        playsInline
+        className="w-full h-full object-cover"
+        src={videoFile}
         autoPlay
+        onEnded={onEnd}
+        controls={false}
+        playsInline
         muted
       />
     </div>
