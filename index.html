@@ -2,32 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <meta name="description" content="PDF Toolbox WebApp" />
+    <title>PDF Toolbox</title>
     <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PDF Toolbox Web App</title>
-
-    <!-- Telegram WebApp SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-    <!-- ✅ Telegram Mini Apps Analytics -->
-    <script
-      async
-      src="https://tganalytics.xyz/index.js"
-      onload="initAnalytics()"
-      type="text/javascript"
-    ></script>
-    <script>
-      function initAnalytics() {
-        window.telegramAnalytics.init({
-          token: 'eyJhcHBfbmFtZSI6InBkZnNtYXJ0dG9vbGJveF9ib3QiLCJhcHBfdXJsIjoiaHR0cHM6Ly90Lm1lL3BkZnNtYXJ0dG9vbGJveF9ib3QiLCJhcHBfZG9tYWluIjoiaHR0cHM6Ly9wZGYtdG9vbGJveC1jbGllbnQub25yZW5kZXIuY29tIn0=!kHxMXBOlpHb9P4zdEhhp1tJoBIME40eudyJT9V9rGoo=',
-          appName: 'pdfsmarttoolbox_bot',
-        });
-      }
-    </script>
+    <script type="module" crossorigin src="/src/main.jsx"></script>
   </head>
 
-  <body>
+  <body class="bg-gray-100">
+    <noscript>
+      <strong>We're sorry but this app requires JavaScript to run properly.</strong>
+    </noscript>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
