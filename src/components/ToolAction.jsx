@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import FileUpload from "./FileUpload";
 import ProModal from "./ProModal";
+import UsernamePrompt from "./UsernamePrompt";
+import { getUserData, updateUserData } from "../lib/userAPI";
 
 function ToolAction({ tool, onBack }) {
   const [files, setFiles] = useState([]);
@@ -8,13 +10,22 @@ function ToolAction({ tool, onBack }) {
   const [downloadUrl, setDownloadUrl] = useState("");
   const [showProModal, setShowProModal] = useState(false);
   const [usedCount, setUsedCount] = useState(0);
-
-  const isPro = localStorage.getItem("pdfToolboxPro") === "1";
+  const [isPro, setIsPro] = useState(false);
+  const [username, setUsername] = useState(localStorage.getItem("pdfUsername") || "");
 
   useEffect(() => {
-    const count = parseInt(localStorage.getItem("pdfUses") || "0");
-    setUsedCount(count);
-  }, []);
+    async function fetchUserStatus() {
+      try {
+        const user = await getUserData(username);
+        setUsedCount(user.count || 0);
+        setIsPro(user.pro || false);
+      } catch (err) {
+        console.error("Failed to fetch user:", err);
+      }
+    }
+
+    if (username) fetchUserStatus();
+  }, [username]);
 
   const handleFileAdd = (file) => {
     setFiles((prev) => {
@@ -29,13 +40,14 @@ function ToolAction({ tool, onBack }) {
   };
 
   const handleProcess = async () => {
+    if (!username) return;
+
     if (files.length < 1) return;
     if (tool.name === "Merge PDF" && files.length < 2) {
       alert("Select at least 2 PDFs to merge.");
       return;
     }
 
-    // 🛑 Free Trial Limit Check
     if (!isPro && usedCount >= 3) {
       setShowProModal(true);
       return;
@@ -60,8 +72,8 @@ function ToolAction({ tool, onBack }) {
 
         if (!isPro) {
           const newCount = usedCount + 1;
-          localStorage.setItem("pdfUses", newCount);
           setUsedCount(newCount);
+          await updateUserData(username, { count: newCount });
         }
       } else {
         alert(result.message || "Done!");
@@ -74,14 +86,25 @@ function ToolAction({ tool, onBack }) {
     }
   };
 
-  const handleUpgrade = () => {
-    localStorage.setItem("pdfToolboxPro", "1");
+  const handleUpgrade = async () => {
+    await updateUserData(username, { pro: true });
+    setIsPro(true);
     setShowProModal(false);
   };
 
+  if (!username) {
+    return <UsernamePrompt onSet={(u) => {
+      setUsername(u);
+      localStorage.setItem("pdfUsername", u);
+    }} />;
+  }
+
   return (
     <div className="bg-white/90 backdrop-blur p-6 rounded-2xl shadow-md space-y-4">
-      <button onClick={onBack} className="text-blue-600 underline text-sm">← Back</button>
+      <div className="flex justify-between items-center">
+        <button onClick={onBack} className="text-blue-600 underline text-sm">← Back</button>
+        <span className="text-sm text-gray-500">👤 {username}</span>
+      </div>
 
       <h2 className="text-xl font-semibold text-center">{tool.name}</h2>
 
@@ -96,9 +119,7 @@ function ToolAction({ tool, onBack }) {
             (tool.name === "Merge PDF" && files.length < 2)
           }
           className={`w-full mt-2 px-4 py-2 rounded-xl shadow text-white font-medium transition ${
-            processing
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
+            processing ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
           }`}
         >
           {processing ? (
