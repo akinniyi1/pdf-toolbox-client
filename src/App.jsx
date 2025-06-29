@@ -2,12 +2,12 @@ import React, { useState, useEffect } from "react";
 import ToolMenu from "./components/ToolMenu";
 import ToolAction from "./components/ToolAction";
 import WelcomePreview from "./components/WelcomePreview";
-import UsernameForm from "./components/UsernameForm";
+import CodeForm from "./components/CodeForm";
 
 function App() {
   const [selectedTool, setSelectedTool] = useState(null);
   const [showPreview, setShowPreview] = useState(true);
-  const [username, setUsername] = useState(localStorage.getItem("username"));
+  const [userCode, setUserCode] = useState(localStorage.getItem("userCode") || null);
 
   useEffect(() => {
     if (window.Telegram?.WebApp) {
@@ -18,14 +18,10 @@ function App() {
   const handleSelect = (tool) => setSelectedTool(tool);
   const handleBack = () => setSelectedTool(null);
   const handleVideoEnd = () => setShowPreview(false);
-  const handleUsernameSet = (name) => {
-    localStorage.setItem("username", name);
-    localStorage.setItem("userId", generateId());
-    setUsername(name);
-  };
 
-  const generateId = () => {
-    return "user_" + Math.random().toString(36).substring(2, 12);
+  const handleCodeSubmit = (code) => {
+    localStorage.setItem("userCode", code);
+    setUserCode(code);
   };
 
   return (
@@ -37,8 +33,8 @@ function App() {
       <div className="max-w-xl mx-auto mt-8 px-4">
         {showPreview ? (
           <WelcomePreview onEnd={handleVideoEnd} />
-        ) : !username ? (
-          <UsernameForm onSubmit={handleUsernameSet} />
+        ) : !userCode ? (
+          <CodeForm onSubmit={handleCodeSubmit} />
         ) : !selectedTool ? (
           <ToolMenu onSelect={handleSelect} />
         ) : (
