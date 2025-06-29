@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import FileUpload from "./FileUpload";
 import ProModal from "./ProModal";
-import { getUserData, updateUserData } from "../lib/userAPI";
 
 function ToolAction({ tool, onBack }) {
   const [files, setFiles] = useState([]);
@@ -9,26 +8,13 @@ function ToolAction({ tool, onBack }) {
   const [downloadUrl, setDownloadUrl] = useState("");
   const [showProModal, setShowProModal] = useState(false);
   const [usedCount, setUsedCount] = useState(0);
-  const [isPro, setIsPro] = useState(false);
 
-  // 🧠 Use Telegram user ID or fallback
-  const telegramUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "TEST_USER";
+  const isPro = localStorage.getItem("pdfToolboxPro") === "1";
 
   useEffect(() => {
-    async function fetchUserStatus() {
-      try {
-        const user = await getUserData(telegramUserId);
-        setUsedCount(user.count || 0);
-        setIsPro(user.pro || false);
-      } catch (err) {
-        console.error("Failed to fetch user:", err);
-      }
-    }
-
-    if (telegramUserId) {
-      fetchUserStatus();
-    }
-  }, [telegramUserId]);
+    const count = parseInt(localStorage.getItem("pdfUses") || "0");
+    setUsedCount(count);
+  }, []);
 
   const handleFileAdd = (file) => {
     setFiles((prev) => {
@@ -49,13 +35,7 @@ function ToolAction({ tool, onBack }) {
       return;
     }
 
-    // ✅ Check if Telegram ID is missing
-    if (!telegramUserId) {
-      alert("❗Please open this tool from Telegram bot to continue.");
-      return;
-    }
-
-    // 🚨 Trigger upgrade modal if over limit
+    // 🛑 Free Trial Limit Check
     if (!isPro && usedCount >= 3) {
       setShowProModal(true);
       return;
@@ -78,11 +58,10 @@ function ToolAction({ tool, onBack }) {
       if (result.download) {
         setDownloadUrl(result.download);
 
-        // 🔄 Update count in backend
         if (!isPro) {
           const newCount = usedCount + 1;
+          localStorage.setItem("pdfUses", newCount);
           setUsedCount(newCount);
-          await updateUserData(telegramUserId, { count: newCount });
         }
       } else {
         alert(result.message || "Done!");
@@ -95,10 +74,9 @@ function ToolAction({ tool, onBack }) {
     }
   };
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = () => {
+    localStorage.setItem("pdfToolboxPro", "1");
     setShowProModal(false);
-    await updateUserData(telegramUserId, { pro: true });
-    setIsPro(true);
   };
 
   return (
