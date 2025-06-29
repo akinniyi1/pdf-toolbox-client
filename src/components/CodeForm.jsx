@@ -1,89 +1,81 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { getUserData, updateUserData } from "../lib/userAPI";
-import { nanoid } from "nanoid";
+
+function generateCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return `user_${code}`;
+}
 
 function CodeForm({ onLogin }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
-  const [status, setStatus] = useState(""); // "new" or "existing"
-
-  useEffect(() => {
-    const saved = localStorage.getItem("user_id");
-    if (saved) {
-      onLogin(saved);
-    }
-  }, [onLogin]);
 
   const handleGenerate = () => {
-    const newCode = "user_" + nanoid(10).toLowerCase();
+    const newCode = generateCode();
     setCode(newCode);
-    setStatus("new");
     setError("");
   };
 
   const handleSubmit = async () => {
-    if (!code) {
-      setError("Please enter or generate a code");
-      return;
-    }
+    if (!code) return;
 
     try {
-      const res = await getUserData(code);
-
-      if (res && status !== "new") {
-        localStorage.setItem("user_id", code);
-        onLogin(code);
-      } else if (status === "new") {
-        // Create new account
-        await updateUserData(code, { count: 0, pro: false, proUntil: null });
-        localStorage.setItem("user_id", code);
-        onLogin(code);
-      } else {
-        setError("This code is new. Please click Generate to register or try another code.");
-      }
+      const user = await getUserData(code);
+      localStorage.setItem("pdf_toolbox_code", code);
+      onLogin(code, user);
     } catch (err) {
-      setError("Something went wrong. Please try again.");
-      console.error("Login error:", err);
+      // User not found — ask to create new
+      const shouldCreate = window.confirm(
+        "This is a new code. It will create a new account. Do you want to proceed?"
+      );
+      if (shouldCreate) {
+        try {
+          await updateUserData(code, { count: 0, pro: false });
+          localStorage.setItem("pdf_toolbox_code", code);
+          onLogin(code, { count: 0, pro: false });
+        } catch (e) {
+          console.error(e);
+          setError("Failed to create account. Please try again later.");
+        }
+      }
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-white p-4">
-      <div className="bg-white shadow-xl rounded-xl p-6 w-full max-w-sm space-y-4">
-        <h1 className="text-xl font-bold text-center text-blue-700">
-          Enter or Create Your Access Code
-        </h1>
+    <div className="flex flex-col items-center gap-4 p-6">
+      <h2 className="text-xl font-bold">Enter or Create Your Access Code</h2>
 
-        <input
-          value={code}
-          onChange={(e) => {
-            setCode(e.target.value);
-            setStatus("");
-          }}
-          placeholder="Enter your code"
-          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
+      <input
+        type="text"
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        className="border p-2 rounded w-64 text-center"
+        placeholder="e.g. user_ABC123"
+      />
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+      <button
+        onClick={handleGenerate}
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
+        Generate
+      </button>
 
-        <button
-          onClick={handleGenerate}
-          className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition"
-        >
-          Generate
-        </button>
+      <button
+        onClick={handleSubmit}
+        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+      >
+        Enter PDF Toolbox
+      </button>
 
-        <button
-          onClick={handleSubmit}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
-        >
-          Enter PDF Toolbox
-        </button>
+      {error && <p className="text-red-600 text-sm">{error}</p>}
 
-        <p className="text-xs text-gray-500 text-center mt-2">
-          Keep your code safe. You’ll need it to log in again later.
-        </p>
-      </div>
+      <p className="text-xs text-gray-500 max-w-xs text-center">
+        Store your code safely. You'll need it to access your account next time.
+      </p>
     </div>
   );
 }
