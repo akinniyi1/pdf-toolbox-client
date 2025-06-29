@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import FileUpload from "./FileUpload";
 import ProModal from "./ProModal";
+import { getUserData, updateUserData } from "../lib/userAPI";
 
 function ToolAction({ tool, onBack }) {
   const [files, setFiles] = useState([]);
@@ -9,24 +10,24 @@ function ToolAction({ tool, onBack }) {
   const [showProModal, setShowProModal] = useState(false);
   const [usedCount, setUsedCount] = useState(0);
   const [isPro, setIsPro] = useState(false);
-  const [userId, setUserId] = useState("");
+  const [proExpire, setProExpire] = useState(null);
+  const userCode = localStorage.getItem("userCode");
 
   useEffect(() => {
-    // Get or generate user ID
-    let id = localStorage.getItem("pdfUserId");
-    if (!id) {
-      id = "user_" + Math.random().toString(36).substring(2, 15);
-      localStorage.setItem("pdfUserId", id);
+    async function fetchUser() {
+      if (!userCode) return;
+      try {
+        const user = await getUserData(userCode);
+        setUsedCount(user.count || 0);
+        setIsPro(user.pro || false);
+        setProExpire(user.expire || null);
+      } catch (err) {
+        console.error("User fetch failed:", err);
+      }
     }
-    setUserId(id);
 
-    // Load usage
-    const storedCount = parseInt(localStorage.getItem("pdfUses") || "0");
-    const proStatus = localStorage.getItem("pdfToolboxPro") === "1";
-
-    setUsedCount(storedCount);
-    setIsPro(proStatus);
-  }, []);
+    fetchUser();
+  }, [userCode]);
 
   const handleFileAdd = (file) => {
     setFiles((prev) => {
@@ -64,18 +65,18 @@ function ToolAction({ tool, onBack }) {
         method: "POST",
         body: formData,
       });
-      const result = await resp.json();
 
+      const result = await resp.json();
       if (result.download) {
         setDownloadUrl(result.download);
 
         if (!isPro) {
           const newCount = usedCount + 1;
           setUsedCount(newCount);
-          localStorage.setItem("pdfUses", newCount.toString());
+          await updateUserData(userCode, { count: newCount });
         }
       } else {
-        alert(result.message || "Something went wrong.");
+        alert(result.message || "Done!");
       }
     } catch (err) {
       console.error(err);
@@ -85,10 +86,18 @@ function ToolAction({ tool, onBack }) {
     }
   };
 
-  const handleUpgrade = () => {
-    setIsPro(true);
-    localStorage.setItem("pdfToolboxPro", "1");
+  const handleUpgrade = async () => {
     setShowProModal(false);
+    const expiration = new Date();
+    expiration.setDate(expiration.getDate() + 30);
+
+    await updateUserData(userCode, {
+      pro: true,
+      expire: expiration.toISOString(),
+    });
+
+    setIsPro(true);
+    setProExpire(expiration.toISOString());
   };
 
   return (
@@ -97,10 +106,12 @@ function ToolAction({ tool, onBack }) {
 
       <h2 className="text-xl font-semibold text-center">{tool.name}</h2>
 
-      <p className="text-sm text-center text-gray-500 mt-1">
-        ID: <span className="font-mono">{userId}</span>
+      <p className="text-sm text-center">
+        <strong>ID:</strong> {userCode}
         <br />
-        You’ve used <b>{usedCount}</b>/3 tools
+        {isPro
+          ? `Pro user (expires: ${new Date(proExpire).toLocaleDateString()})`
+          : `You’ve used ${usedCount}/3 tools`}
       </p>
 
       <FileUpload files={files} onFileAdd={handleFileAdd} onReset={handleReset} />
