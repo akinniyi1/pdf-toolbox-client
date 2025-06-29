@@ -7,7 +7,7 @@ import CodeForm from "./components/CodeForm";
 function App() {
   const [selectedTool, setSelectedTool] = useState(null);
   const [showPreview, setShowPreview] = useState(true);
-  const [userCode, setUserCode] = useState(localStorage.getItem("userCode") || null);
+  const [userCode, setUserCode] = useState(localStorage.getItem("userCode") || "");
 
   useEffect(() => {
     if (window.Telegram?.WebApp) {
@@ -15,12 +15,19 @@ function App() {
     }
   }, []);
 
-  const handleSelect = (tool) => setSelectedTool(tool);
-  const handleBack = () => setSelectedTool(null);
-  const handleVideoEnd = () => setShowPreview(false);
+  const handleSelect = (tool) => {
+    setSelectedTool(tool);
+  };
 
-  const handleCodeSubmit = (code) => {
-    localStorage.setItem("userCode", code);
+  const handleBack = () => {
+    setSelectedTool(null);
+  };
+
+  const handleVideoEnd = () => {
+    setShowPreview(false);
+  };
+
+  const handleLogin = (code) => {
     setUserCode(code);
   };
 
@@ -34,9 +41,9 @@ function App() {
         {showPreview ? (
           <WelcomePreview onEnd={handleVideoEnd} />
         ) : !userCode ? (
-          <CodeForm onSubmit={handleCodeSubmit} />
+          <CodeForm onSubmit={handleLogin} />
         ) : !selectedTool ? (
-          <ToolMenu onSelect={handleSelect} />
+          <ToolMenu onSelect={handleSelect} selected={selectedTool} />
         ) : (
           <ToolAction tool={selectedTool} onBack={handleBack} />
         )}
