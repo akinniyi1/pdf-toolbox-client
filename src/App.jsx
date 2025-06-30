@@ -1,72 +1,40 @@
 import React, { useState, useEffect } from "react";
+import WelcomePreview from "./components/WelcomePreview";
 import ToolMenu from "./components/ToolMenu";
 import ToolAction from "./components/ToolAction";
-import WelcomePreview from "./components/WelcomePreview";
-import axios from "axios";
-
-const BACKEND_URL = "https://pdf-toolbox-server.onrender.com";
+import ProModal from "./components/ProModal";
 
 function App() {
-  const [selectedTool, setSelectedTool] = useState(null);
   const [showPreview, setShowPreview] = useState(true);
-  const [user, setUser] = useState(null);
+  const [selectedTool, setSelectedTool] = useState(null);
 
   useEffect(() => {
-    // Expand Telegram WebApp if available
     if (window.Telegram?.WebApp) {
       window.Telegram.WebApp.expand();
     }
   }, []);
 
-  const handleSelect = (tool) => {
-    setSelectedTool(tool);
-  };
-
-  const handleBack = () => {
-    setSelectedTool(null);
-  };
-
-  const handleVideoEnd = async () => {
-    setShowPreview(false);
-
-    // Get Telegram user data
-    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-
-    if (tgUser) {
-      const userData = {
-        id: `tg_${tgUser.id}`,
-        name: tgUser.first_name || "User",
-        username: tgUser.username || "",
-        photo: tgUser.photo_url || "",
-        pro: false,
-        count: 0,
-      };
-
-      setUser(userData);
-
-      try {
-        await axios.post(`${BACKEND_URL}/user/${userData.id}`, userData);
-      } catch (error) {
-        console.error("Error saving user data:", error);
-      }
-    }
-  };
+  const handlePreviewEnd = () => setShowPreview(false);
+  const handleSelect = (tool) => setSelectedTool(tool);
+  const handleBack = () => setSelectedTool(null);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 font-sans">
-      <header className="text-center py-6 text-2xl font-bold text-blue-700 shadow">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white font-sans">
+      <header className="text-center py-5 text-3xl font-bold text-blue-700 shadow-md">
         PDF Toolbox Bot
       </header>
 
-      <div className="max-w-xl mx-auto mt-8 px-4">
+      <main className="max-w-3xl mx-auto px-4 mt-6">
         {showPreview ? (
-          <WelcomePreview onEnd={handleVideoEnd} />
-        ) : !selectedTool ? (
-          <ToolMenu onSelect={handleSelect} selected={selectedTool} user={user} />
+          <WelcomePreview onEnd={handlePreviewEnd} />
+        ) : selectedTool ? (
+          <ToolAction tool={selectedTool} onBack={handleBack} />
         ) : (
-          <ToolAction tool={selectedTool} onBack={handleBack} user={user} />
+          <ToolMenu onSelect={handleSelect} />
         )}
-      </div>
+      </main>
+
+      <ProModal />
     </div>
   );
 }
