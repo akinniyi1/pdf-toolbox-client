@@ -4,7 +4,7 @@ import ToolAction from "./components/ToolAction";
 import WelcomePreview from "./components/WelcomePreview";
 import axios from "axios";
 
-const BASE_URL = "https://pdf-toolbox-server.onrender.com";
+const BACKEND_URL = "https://pdf-toolbox-server.onrender.com";
 
 function App() {
   const [selectedTool, setSelectedTool] = useState(null);
@@ -12,37 +12,45 @@ function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
+    // Expand Telegram WebApp if available
     if (window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp;
-      tg.expand();
-
-      const id = `tg_${tg.initDataUnsafe?.user?.id}`;
-      const username = tg.initDataUnsafe?.user?.username || "";
-      const first_name = tg.initDataUnsafe?.user?.first_name || "";
-      const photo_url = username
-        ? `https://t.me/i/userpic/320/${username}.jpg`
-        : "";
-
-      // Fetch or create user
-      axios
-        .post(`${BASE_URL}/user/${id}`, {
-          first_name,
-          username,
-          photo_url,
-        })
-        .then(() => {
-          return axios.get(`${BASE_URL}/user/${id}`);
-        })
-        .then((res) => {
-          setUser({ ...res.data, id });
-        })
-        .catch(() => {
-          alert("❌ Failed to load user");
-        });
+      window.Telegram.WebApp.expand();
     }
   }, []);
 
-  const handleVideoEnd = () => setShowPreview(false);
+  const handleSelect = (tool) => {
+    setSelectedTool(tool);
+  };
+
+  const handleBack = () => {
+    setSelectedTool(null);
+  };
+
+  const handleVideoEnd = async () => {
+    setShowPreview(false);
+
+    // Get Telegram user data
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+
+    if (tgUser) {
+      const userData = {
+        id: `tg_${tgUser.id}`,
+        name: tgUser.first_name || "User",
+        username: tgUser.username || "",
+        photo: tgUser.photo_url || "",
+        pro: false,
+        count: 0,
+      };
+
+      setUser(userData);
+
+      try {
+        await axios.post(`${BACKEND_URL}/user/${userData.id}`, userData);
+      } catch (error) {
+        console.error("Error saving user data:", error);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 font-sans">
@@ -54,9 +62,9 @@ function App() {
         {showPreview ? (
           <WelcomePreview onEnd={handleVideoEnd} />
         ) : !selectedTool ? (
-          <ToolMenu onSelect={setSelectedTool} user={user} />
+          <ToolMenu onSelect={handleSelect} selected={selectedTool} user={user} />
         ) : (
-          <ToolAction tool={selectedTool} onBack={() => setSelectedTool(null)} user={user} />
+          <ToolAction tool={selectedTool} onBack={handleBack} user={user} />
         )}
       </div>
     </div>
