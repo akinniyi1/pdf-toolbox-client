@@ -1,28 +1,28 @@
-import React from "react";
+import React, { useState } from "react";
 
-function ProModal({ onClose, onUpgrade }) {
+export default function ProModal() {
+  const [open, setOpen] = useState(false);
+
+  // You can toggle `open` when count >=3 in ToolAction
+
+  if (!open) return null;
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-xl shadow-lg max-w-sm text-center">
-        <h2 className="text-xl font-bold mb-2 text-red-600">Upgrade Required</h2>
-        <p className="mb-4">You've reached the free tool limit. Upgrade to Pro to continue.</p>
-        <div className="space-x-3">
-          <button
-            onClick={onUpgrade}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-          >
-            Upgrade to Pro
-          </button>
-          <button
-            onClick={onClose}
-            className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg"
-          >
-            Cancel
-          </button>
-        </div>
+        <h3 className="text-lg font-bold mb-2">Upgrade to Pro</h3>
+        <p className="mb-4">Unlock unlimited access to all tools.</p>
+        <a
+          href="https://t.me/your_payment_link"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block bg-green-600 text-white py-2 rounded mb-2"
+        >
+          Pay with TON
+        </a>
+        <button onClick={() => setOpen(false)} className="text-gray-600 underline">
+          Maybe Later
+        </button>
       </div>
     </div>
   );
 }
-
-export default ProModal;
