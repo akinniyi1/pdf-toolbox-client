@@ -1,76 +1,117 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import ProModal from "./ProModal";
 
-export default function ToolAction({ tool, onBack }) {
-  const [files, setFiles] = useState([]);
-  const [processing, setProcessing] = useState(false);
-  const [downloadUrl, setDownloadUrl] = useState("");
-  const [error, setError] = useState("");
+const BASE_URL = "https://pdf-toolbox-server.onrender.com"; // Your backend
+
+const ToolAction = ({ tool, onBack }) => {
+  const [file, setFile] = useState(null);
+  const [user, setUser] = useState(null);
+  const [showProModal, setShowProModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [responseMsg, setResponseMsg] = useState("");
+
+  useEffect(() => {
+    const tg = window.Telegram?.WebApp;
+    if (tg?.initDataUnsafe?.user) {
+      const { id, username, first_name, photo_url } = tg.initDataUnsafe.user;
+      const userId = `tg_${id}`;
+      const data = {
+        id: userId,
+        username: username || first_name || "Guest",
+        avatar: photo_url || "",
+      };
+      setUser(data);
+      fetchUserInfo(userId);
+    }
+  }, []);
+
+  const fetchUserInfo = async (userId) => {
+    try {
+      const res = await axios.get(`${BASE_URL}/user/${userId}`);
+      setUser((prev) => ({ ...prev, ...res.data }));
+    } catch (err) {
+      console.error("Failed to fetch user info:", err);
+    }
+  };
 
   const handleFileChange = (e) => {
-    setFiles(Array.from(e.target.files).filter((f) => f.name.endsWith(".pdf")));
+    setFile(e.target.files[0]);
+    setResponseMsg("");
   };
 
   const handleProcess = async () => {
-    setError("");
-    if (!files.length) return setError("Please select at least one PDF.");
+    if (!file || !user) return;
+    if (!user.pro && user.count >= 3) {
+      setShowProModal(true);
+      return;
+    }
 
-    setProcessing(true);
-    const form = new FormData();
-    files.forEach((f) => form.append("files", f));
-    form.append("tool", tool);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("tool", tool.name);
+    formData.append("userId", user.id);
 
     try {
-      const res = await fetch("https://pdf-toolbox-server.onrender.com/process", {
-        method: "POST",
-        body: form,
-      });
-      const data = await res.json();
-      if (data.download) {
-        setDownloadUrl(data.download);
-      } else {
-        setError(data.error || "Processing failed");
-      }
-    } catch {
-      setError("Network error");
+      setLoading(true);
+      const res = await axios.post(`${BASE_URL}/process`, formData);
+      setResponseMsg(res.data.message || "Processed successfully!");
+      await fetchUserInfo(user.id); // Update usage count
+    } catch (err) {
+      console.error(err);
+      setResponseMsg("Something went wrong.");
+    } finally {
+      setLoading(false);
     }
-    setProcessing(false);
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow space-y-4">
-      <button onClick={onBack} className="text-blue-600 underline">← Back</button>
-      <h2 className="text-xl font-semibold text-center">{tool}</h2>
+    <div className="p-4 bg-white shadow rounded-lg space-y-4">
+      <button onClick={onBack} className="text-blue-500 underline">
+        ← Back to Menu
+      </button>
+
+      <h2 className="text-xl font-bold text-gray-800">{tool.name}</h2>
+
+      {user && (
+        <div className="bg-gray-100 p-3 rounded-md">
+          <p><strong>ID:</strong> {user.id}</p>
+          <p><strong>Username:</strong> {user.username}</p>
+          <p><strong>Used:</strong> {user.count || 0}/3 tools</p>
+          {user.avatar && (
+            <img
+              src={user.avatar}
+              alt="User avatar"
+              className="w-16 h-16 rounded-full mt-2"
+            />
+          )}
+        </div>
+      )}
 
       <input
         type="file"
-        accept=".pdf"
-        multiple
+        accept="application/pdf"
         onChange={handleFileChange}
-        className="block w-full text-sm text-gray-700 mb-2"
+        className="block w-full border rounded p-2"
       />
-
-      {error && <p className="text-red-500">{error}</p>}
 
       <button
         onClick={handleProcess}
-        disabled={processing}
-        className={`w-full py-2 rounded text-white ${
-          processing ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
-        }`}
+        className="bg-blue-600 text-white w-full py-2 rounded hover:bg-blue-700"
+        disabled={loading}
       >
-        {processing ? "Processing..." : "Process"}
+        {loading ? "Processing..." : "Process PDF"}
       </button>
 
-      {downloadUrl && (
-        <a
-          href={downloadUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block text-center text-green-600 underline mt-2"
-        >
-          Download Result
-        </a>
+      {responseMsg && (
+        <div className="text-center text-sm text-red-500 mt-2">
+          {responseMsg}
+        </div>
       )}
+
+      <ProModal visible={showProModal} onClose={() => setShowProModal(false)} />
     </div>
   );
-}
+};
+
+export default ToolAction;
