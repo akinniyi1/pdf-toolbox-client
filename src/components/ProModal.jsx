@@ -1,25 +1,28 @@
 import React from "react";
 
-export default function ProModal({ onClose }) {
+function ProModal({ onClose, onUpgrade }) {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white p-6 rounded-xl shadow max-w-md">
-        <h2 className="text-xl font-bold mb-4">Upgrade Required</h2>
-        <p className="mb-4">
-          You’ve used all 3 free tools. To continue using this app, please upgrade to Pro.
-        </p>
-        <div className="flex justify-end gap-3">
-          <button className="bg-gray-300 px-4 py-2 rounded" onClick={onClose}>
-            Cancel
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-xl shadow-lg max-w-sm text-center">
+        <h2 className="text-xl font-bold mb-2 text-red-600">Upgrade Required</h2>
+        <p className="mb-4">You've reached the free tool limit. Upgrade to Pro to continue.</p>
+        <div className="space-x-3">
+          <button
+            onClick={onUpgrade}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+          >
+            Upgrade to Pro
           </button>
           <button
-            className="bg-green-600 text-white px-4 py-2 rounded"
-            onClick={() => window.open("https://t.me/your_payment_link", "_blank")}
+            onClick={onClose}
+            className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg"
           >
-            Pay Now
+            Cancel
           </button>
         </div>
       </div>
     </div>
   );
 }
+
+export default ProModal;
