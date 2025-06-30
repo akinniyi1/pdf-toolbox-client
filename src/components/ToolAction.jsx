@@ -1,91 +1,76 @@
 import React, { useState } from "react";
-import ProModal from "./ProModal";
-import axios from "axios";
 
-export default function ToolAction({ tool, onBack, user }) {
+export default function ToolAction({ tool, onBack }) {
   const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [downloadLink, setDownloadLink] = useState("");
+  const [processing, setProcessing] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState("");
   const [error, setError] = useState("");
-  const [showModal, setShowModal] = useState(false);
+
+  const handleFileChange = (e) => {
+    setFiles(Array.from(e.target.files).filter((f) => f.name.endsWith(".pdf")));
+  };
 
   const handleProcess = async () => {
     setError("");
-    if (!files.length) return setError("Please select at least one file");
+    if (!files.length) return setError("Please select at least one PDF.");
 
-    if (!user.pro && user.count >= 3) {
-      return setShowModal(true);
-    }
+    setProcessing(true);
+    const form = new FormData();
+    files.forEach((f) => form.append("files", f));
+    form.append("tool", tool);
 
     try {
-      setLoading(true);
-      const formData = new FormData();
-      files.forEach((f) => formData.append("files", f));
-      formData.append("tool", tool);
-      formData.append("user", user.email);
-
-      const res = await axios.post(
-        "https://pdf-toolbox-server.onrender.com/process",
-        formData
-      );
-      setDownloadLink(res.data.download);
-
-      // update count on server
-      await axios.post(`https://pdf-toolbox-server.onrender.com/user/${user.email}`, {
-        count: user.count + 1,
+      const res = await fetch("https://pdf-toolbox-server.onrender.com/process", {
+        method: "POST",
+        body: form,
       });
-    } catch (err) {
-      setError("Something went wrong.");
-    } finally {
-      setLoading(false);
+      const data = await res.json();
+      if (data.download) {
+        setDownloadUrl(data.download);
+      } else {
+        setError(data.error || "Processing failed");
+      }
+    } catch {
+      setError("Network error");
     }
+    setProcessing(false);
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow">
-      <h2 className="text-xl font-semibold mb-4">{tool}</h2>
-      <p className="text-sm mb-2 text-gray-500">Logged in as: {user.email}</p>
-      <p className="text-sm mb-4 text-gray-600">
-        You’ve used {user.count || 0}/3 free tools {user.pro && "(Pro user)"}
-      </p>
+    <div className="bg-white p-6 rounded-xl shadow space-y-4">
+      <button onClick={onBack} className="text-blue-600 underline">← Back</button>
+      <h2 className="text-xl font-semibold text-center">{tool}</h2>
 
       <input
         type="file"
-        multiple
         accept=".pdf"
-        onChange={(e) => setFiles(Array.from(e.target.files))}
-        className="mb-4"
+        multiple
+        onChange={handleFileChange}
+        className="block w-full text-sm text-gray-700 mb-2"
       />
 
-      {error && <p className="text-red-500 mb-2">{error}</p>}
+      {error && <p className="text-red-500">{error}</p>}
 
-      <div className="flex gap-3">
-        <button
-          className="bg-gray-500 text-white px-4 py-2 rounded"
-          onClick={onBack}
-        >
-          Back
-        </button>
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-          onClick={handleProcess}
-          disabled={loading}
-        >
-          {loading ? "Processing..." : "Process"}
-        </button>
-      </div>
+      <button
+        onClick={handleProcess}
+        disabled={processing}
+        className={`w-full py-2 rounded text-white ${
+          processing ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+        }`}
+      >
+        {processing ? "Processing..." : "Process"}
+      </button>
 
-      {downloadLink && (
+      {downloadUrl && (
         <a
-          href={downloadLink}
-          className="block mt-4 text-blue-700 underline"
+          href={downloadUrl}
           target="_blank"
+          rel="noopener noreferrer"
+          className="block text-center text-green-600 underline mt-2"
         >
-          Download File
+          Download Result
         </a>
       )}
-
-      {showModal && <ProModal onClose={() => setShowModal(false)} />}
     </div>
   );
 }
