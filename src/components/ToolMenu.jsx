@@ -1,32 +1,34 @@
 import React from "react";
 
-const tools = [
-  { name: "Merge PDF", emoji: "📎" },
-  { name: "Split PDF", emoji: "✂️" },
-  { name: "Compress PDF", emoji: "🗜️" },
-  { name: "Protect PDF", emoji: "🔐" },
-  { name: "Unlock PDF", emoji: "🔓" },
-  { name: "PDF to Word", emoji: "📝" },
-  { name: "PDF to Image", emoji: "📷" },
-];
-
-function ToolMenu({ onSelect, selected }) {
+function ToolMenu({ onSelect, user }) {
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {tools.map((tool) => (
-        <button
-          key={tool.name}
-          onClick={() => onSelect(tool)}
-          className={`p-4 text-left rounded-xl shadow border transition font-medium text-sm ${
-            selected?.name === tool.name
-              ? "bg-blue-600 text-white"
-              : "bg-white hover:bg-blue-50 text-gray-800"
-          }`}
-        >
-          <span className="text-lg mr-2">{tool.emoji}</span>
-          {tool.name}
-        </button>
-      ))}
+    <div className="text-center">
+      {user && (
+        <div className="bg-white p-4 rounded shadow mb-6">
+          <h2 className="text-xl font-bold mb-2">👤 Your Profile</h2>
+          {user.photo_url && (
+            <img
+              src={user.photo_url}
+              alt="profile"
+              className="w-20 h-20 rounded-full mx-auto mb-2"
+            />
+          )}
+          <p><strong>ID:</strong> {user.id}</p>
+          <p><strong>Name:</strong> {user.first_name}</p>
+          <p><strong>Username:</strong> @{user.username}</p>
+          <p><strong>Pro:</strong> {user.pro ? "✅ Yes" : "❌ No"}</p>
+          {user.proUntil && (
+            <p><strong>Pro Expiry:</strong> {new Date(user.proUntil).toLocaleString()}</p>
+          )}
+        </div>
+      )}
+
+      <h3 className="text-lg font-semibold mb-2">📄 Choose a PDF Tool</h3>
+      <div className="grid gap-2">
+        <button className="btn" onClick={() => onSelect("Compress PDF")}>Compress PDF</button>
+        <button className="btn" onClick={() => onSelect("Split PDF")}>Split PDF</button>
+        <button className="btn" onClick={() => onSelect("Merge PDF")}>Merge PDF</button>
+      </div>
     </div>
   );
 }
