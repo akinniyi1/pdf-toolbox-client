@@ -1,4 +1,3 @@
-// src/components/ToolAction.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ProModal from "./ProModal";
@@ -12,7 +11,6 @@ export default function ToolAction({ tool, onBack, user }) {
   const [showProModal, setShowProModal] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
-  // Show Pro modal if needed
   useEffect(() => {
     if (user && !user.pro && user.count >= 3) {
       setShowProModal(true);
@@ -30,6 +28,11 @@ export default function ToolAction({ tool, onBack, user }) {
       return;
     }
 
+    if (!user || !user.id) {
+      setError("User data missing.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("tool", tool);
@@ -41,6 +44,9 @@ export default function ToolAction({ tool, onBack, user }) {
 
       const response = await axios.post(`${BASE_URL}/process`, formData, {
         responseType: "blob",
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       const blob = new Blob([response.data], { type: "application/pdf" });
@@ -54,8 +60,7 @@ export default function ToolAction({ tool, onBack, user }) {
     } catch (err) {
       console.error("Process error:", err);
       setError(
-        err.response?.data?.error ||
-          "Network error or server unavailable."
+        err.response?.data?.error || "Network error or server unavailable."
       );
     } finally {
       setLoading(false);
@@ -72,10 +77,7 @@ export default function ToolAction({ tool, onBack, user }) {
         >
           {showProfile ? "Hide Profile" : "Profile"}
         </button>
-        <button
-          onClick={onBack}
-          className="text-blue-600 underline text-sm"
-        >
+        <button onClick={onBack} className="text-blue-600 underline text-sm">
           ← Back
         </button>
       </div>
@@ -93,12 +95,8 @@ export default function ToolAction({ tool, onBack, user }) {
           <p className="text-center font-semibold">
             {user.username || user.name}
           </p>
-          <p className="text-sm text-gray-600 text-center">
-            {user.name}
-          </p>
-          <p className="text-xs text-gray-500 text-center">
-            ID: {user.id}
-          </p>
+          <p className="text-sm text-gray-600 text-center">{user.name}</p>
+          <p className="text-xs text-gray-500 text-center">ID: {user.id}</p>
         </div>
       )}
 
@@ -132,7 +130,7 @@ export default function ToolAction({ tool, onBack, user }) {
         <ProModal
           onClose={() => setShowProModal(false)}
           onUpgrade={() => {
-            /* handle upgrade flow */
+            // Handle upgrade flow here
           }}
         />
       )}
