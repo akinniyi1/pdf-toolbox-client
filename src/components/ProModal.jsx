@@ -1,26 +1,54 @@
-import React, { useState } from "react";
+// src/components/ProModal.jsx
+import React from "react";
 
-export default function ProModal() {
-  const [open, setOpen] = useState(false);
-
-  // You can toggle `open` when count >=3 in ToolAction
-
-  if (!open) return null;
+export default function ProModal({ user, onClose, onUpgrade }) {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-xl shadow-lg max-w-sm text-center">
-        <h3 className="text-lg font-bold mb-2">Upgrade to Pro</h3>
-        <p className="mb-4">Unlock unlimited access to all tools.</p>
-        <a
-          href="https://t.me/your_payment_link"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block bg-green-600 text-white py-2 rounded mb-2"
+    <div className="fixed inset-0 bg-black/40 backdrop-blur flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-lg max-w-sm w-full p-6 space-y-4">
+        {/* Header */}
+        <h2 className="text-xl font-bold text-center text-blue-700">
+          Upgrade to Pro
+        </h2>
+
+        {/* Show their profile */}
+        {user && (
+          <div className="flex flex-col items-center space-y-2">
+            {user.avatar && (
+              <img
+                src={user.avatar}
+                alt="avatar"
+                className="w-16 h-16 rounded-full"
+              />
+            )}
+            <div className="font-semibold">
+              @{user.username || user.name}
+            </div>
+            <div className="text-sm text-gray-500">ID: {user.id}</div>
+          </div>
+        )}
+
+        {/* Pitch */}
+        <p className="text-sm text-gray-600 text-center">
+          You’ve reached your free limit. Upgrade to Pro to unlock:
+        </p>
+        <ul className="list-disc pl-6 text-sm text-gray-700 space-y-1">
+          <li>Unlimited PDF edits</li>
+          <li>Large file support</li>
+          <li>OCR (text extraction)</li>
+        </ul>
+
+        {/* Actions */}
+        <button
+          onClick={() => onUpgrade(user.id)}
+          className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-xl shadow"
         >
-          Pay with TON
-        </a>
-        <button onClick={() => setOpen(false)} className="text-gray-600 underline">
-          Maybe Later
+          🔓 Pay 0.5 TON to Unlock Pro
+        </button>
+        <button
+          onClick={onClose}
+          className="w-full text-sm text-gray-500 hover:underline text-center mt-2"
+        >
+          Maybe later
         </button>
       </div>
     </div>
