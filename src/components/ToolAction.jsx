@@ -1,117 +1,128 @@
+// src/components/ToolAction.jsx
+
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ProModal from "./ProModal";
 
-const BASE_URL = "https://pdf-toolbox-server.onrender.com"; // Your backend
+const BASE_URL = "https://pdf-toolbox-server.onrender.com";
 
-const ToolAction = ({ tool, onBack }) => {
+export default function ToolAction({ tool, onBack, user }) {
   const [file, setFile] = useState(null);
-  const [user, setUser] = useState(null);
-  const [showProModal, setShowProModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [responseMsg, setResponseMsg] = useState("");
+  const [error, setError] = useState("");
+  const [showProModal, setShowProModal] = useState(false);
 
+  // Check user usage if you still track trials
   useEffect(() => {
-    const tg = window.Telegram?.WebApp;
-    if (tg?.initDataUnsafe?.user) {
-      const { id, username, first_name, photo_url } = tg.initDataUnsafe.user;
-      const userId = `tg_${id}`;
-      const data = {
-        id: userId,
-        username: username || first_name || "Guest",
-        avatar: photo_url || "",
-      };
-      setUser(data);
-      fetchUserInfo(userId);
+    if (user && !user.pro && user.count >= 3) {
+      setShowProModal(true);
     }
-  }, []);
-
-  const fetchUserInfo = async (userId) => {
-    try {
-      const res = await axios.get(`${BASE_URL}/user/${userId}`);
-      setUser((prev) => ({ ...prev, ...res.data }));
-    } catch (err) {
-      console.error("Failed to fetch user info:", err);
-    }
-  };
+  }, [user]);
 
   const handleFileChange = (e) => {
+    setError("");
     setFile(e.target.files[0]);
-    setResponseMsg("");
   };
 
   const handleProcess = async () => {
-    if (!file || !user) return;
+    if (!file) {
+      setError("Please select a PDF file first.");
+      return;
+    }
+    if (!user) {
+      setError("User data missing.");
+      return;
+    }
     if (!user.pro && user.count >= 3) {
       setShowProModal(true);
       return;
     }
 
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append("tool", tool.name);
+    formData.append("file", file);         // must match upload.single("file")
+    formData.append("tool", tool);
     formData.append("userId", user.id);
 
     try {
       setLoading(true);
-      const res = await axios.post(`${BASE_URL}/process`, formData);
-      setResponseMsg(res.data.message || "Processed successfully!");
-      await fetchUserInfo(user.id); // Update usage count
+      setError("");
+
+      const response = await axios.post(`${BASE_URL}/process`, formData, {
+        responseType: "blob",              // important for binary PDF
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      // create a download link
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${tool.replace(/\s+/g, "_")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      // Optionally update usage count in parent or fetch fresh user data
     } catch (err) {
-      console.error(err);
-      setResponseMsg("Something went wrong.");
+      console.error("Process error:", err);
+      // if server returned JSON error instead of PDF
+      if (err.response && err.response.data instanceof Blob) {
+        // try to parse JSON
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const msg = JSON.parse(reader.result).error;
+            setError(msg || "Processing failed.");
+          } catch {
+            setError("Unexpected response format.");
+          }
+        };
+        reader.readAsText(err.response.data);
+      } else {
+        setError("Network error or server unavailable.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-4 bg-white shadow rounded-lg space-y-4">
-      <button onClick={onBack} className="text-blue-500 underline">
-        ← Back to Menu
+    <div className="bg-white p-6 rounded-xl shadow-md space-y-4">
+      <button onClick={onBack} className="text-blue-600 underline text-sm">
+        ← Back
       </button>
 
-      <h2 className="text-xl font-bold text-gray-800">{tool.name}</h2>
-
-      {user && (
-        <div className="bg-gray-100 p-3 rounded-md">
-          <p><strong>ID:</strong> {user.id}</p>
-          <p><strong>Username:</strong> {user.username}</p>
-          <p><strong>Used:</strong> {user.count || 0}/3 tools</p>
-          {user.avatar && (
-            <img
-              src={user.avatar}
-              alt="User avatar"
-              className="w-16 h-16 rounded-full mt-2"
-            />
-          )}
-        </div>
-      )}
+      <h2 className="text-xl font-semibold text-center">{tool}</h2>
 
       <input
         type="file"
         accept="application/pdf"
         onChange={handleFileChange}
-        className="block w-full border rounded p-2"
+        className="block w-full text-gray-700 mb-2"
       />
+
+      {error && <p className="text-red-500">{error}</p>}
 
       <button
         onClick={handleProcess}
-        className="bg-blue-600 text-white w-full py-2 rounded hover:bg-blue-700"
         disabled={loading}
+        className={`w-full py-2 rounded-xl text-white ${
+          loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+        }`}
       >
         {loading ? "Processing..." : "Process PDF"}
       </button>
 
-      {responseMsg && (
-        <div className="text-center text-sm text-red-500 mt-2">
-          {responseMsg}
-        </div>
+      {showProModal && (
+        <ProModal
+          onClose={() => setShowProModal(false)}
+          onUpgrade={() => {
+            /* handle upgrade flow */
+          }}
+        />
       )}
-
-      <ProModal visible={showProModal} onClose={() => setShowProModal(false)} />
     </div>
   );
-};
-
-export default ToolAction;
+}
