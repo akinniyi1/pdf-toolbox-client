@@ -1,5 +1,4 @@
 // src/components/ToolAction.jsx
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ProModal from "./ProModal";
@@ -11,8 +10,9 @@ export default function ToolAction({ tool, onBack, user }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showProModal, setShowProModal] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
-  // Check user usage if you still track trials
+  // Show Pro modal if needed
   useEffect(() => {
     if (user && !user.pro && user.count >= 3) {
       setShowProModal(true);
@@ -29,17 +29,9 @@ export default function ToolAction({ tool, onBack, user }) {
       setError("Please select a PDF file first.");
       return;
     }
-    if (!user) {
-      setError("User data missing.");
-      return;
-    }
-    if (!user.pro && user.count >= 3) {
-      setShowProModal(true);
-      return;
-    }
 
     const formData = new FormData();
-    formData.append("file", file);         // must match upload.single("file")
+    formData.append("file", file);
     formData.append("tool", tool);
     formData.append("userId", user.id);
 
@@ -48,13 +40,9 @@ export default function ToolAction({ tool, onBack, user }) {
       setError("");
 
       const response = await axios.post(`${BASE_URL}/process`, formData, {
-        responseType: "blob",              // important for binary PDF
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        responseType: "blob",
       });
 
-      // create a download link
       const blob = new Blob([response.data], { type: "application/pdf" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -63,58 +51,83 @@ export default function ToolAction({ tool, onBack, user }) {
       document.body.appendChild(a);
       a.click();
       a.remove();
-
-      // Optionally update usage count in parent or fetch fresh user data
     } catch (err) {
       console.error("Process error:", err);
-      // if server returned JSON error instead of PDF
-      if (err.response && err.response.data instanceof Blob) {
-        // try to parse JSON
-        const reader = new FileReader();
-        reader.onload = () => {
-          try {
-            const msg = JSON.parse(reader.result).error;
-            setError(msg || "Processing failed.");
-          } catch {
-            setError("Unexpected response format.");
-          }
-        };
-        reader.readAsText(err.response.data);
-      } else {
-        setError("Network error or server unavailable.");
-      }
+      setError(
+        err.response?.data?.error ||
+          "Network error or server unavailable."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-md space-y-4">
-      <button onClick={onBack} className="text-blue-600 underline text-sm">
-        ← Back
-      </button>
+    <div className="relative p-6 bg-white shadow rounded-xl space-y-4">
+      {/* Profile & Back Buttons */}
+      <div className="flex justify-between">
+        <button
+          onClick={() => setShowProfile((v) => !v)}
+          className="text-purple-600 hover:underline text-sm"
+        >
+          {showProfile ? "Hide Profile" : "Profile"}
+        </button>
+        <button
+          onClick={onBack}
+          className="text-blue-600 underline text-sm"
+        >
+          ← Back
+        </button>
+      </div>
 
+      {/* Profile Overlay */}
+      {showProfile && user && (
+        <div className="absolute top-10 right-6 bg-gray-50 border rounded-lg p-4 shadow-lg w-64">
+          {user.avatar && (
+            <img
+              src={user.avatar}
+              alt="avatar"
+              className="w-16 h-16 rounded-full mx-auto mb-2"
+            />
+          )}
+          <p className="text-center font-semibold">
+            {user.username || user.name}
+          </p>
+          <p className="text-sm text-gray-600 text-center">
+            {user.name}
+          </p>
+          <p className="text-xs text-gray-500 text-center">
+            ID: {user.id}
+          </p>
+        </div>
+      )}
+
+      {/* Tool Title */}
       <h2 className="text-xl font-semibold text-center">{tool}</h2>
 
+      {/* File Input */}
       <input
         type="file"
         accept="application/pdf"
         onChange={handleFileChange}
-        className="block w-full text-gray-700 mb-2"
+        className="block w-full border rounded p-2"
       />
 
-      {error && <p className="text-red-500">{error}</p>}
+      {/* Error Message */}
+      {error && <p className="text-red-500 text-sm">{error}</p>}
 
+      {/* Process Button */}
       <button
         onClick={handleProcess}
         disabled={loading}
         className={`w-full py-2 rounded-xl text-white ${
-          loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+          loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
         }`}
       >
         {loading ? "Processing..." : "Process PDF"}
       </button>
 
+      {/* Pro Modal */}
       {showProModal && (
         <ProModal
           onClose={() => setShowProModal(false)}
