@@ -49,5 +49,6 @@ export default function App() {
     );
   }
 
-  return <ToolMenu onSelect={handleSelect} />;
+  // ✅ user is now passed into ToolMenu
+  return <ToolMenu onSelect={handleSelect} user={user} />;
 }
