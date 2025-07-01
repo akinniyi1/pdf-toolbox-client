@@ -66,8 +66,7 @@ export default function ToolAction({ tool, onBack, user }) {
     } catch (err) {
       console.error("Process error:", err);
       setError(
-        err.response?.data?.error ||
-        "Network error or server unavailable."
+        err.response?.data?.error || "Network error or server unavailable."
       );
     } finally {
       setLoading(false);
@@ -76,7 +75,6 @@ export default function ToolAction({ tool, onBack, user }) {
 
   return (
     <div className="relative p-6 bg-white shadow rounded-xl space-y-4">
-      {/* Profile & Back Buttons */}
       <div className="flex justify-between">
         <button
           onClick={() => setShowProfile((v) => !v)}
@@ -89,7 +87,6 @@ export default function ToolAction({ tool, onBack, user }) {
         </button>
       </div>
 
-      {/* Profile Overlay */}
       {showProfile && user && (
         <div className="absolute top-10 right-6 bg-gray-50 border rounded-lg p-4 shadow-lg w-64">
           {user.avatar && (
@@ -100,17 +97,15 @@ export default function ToolAction({ tool, onBack, user }) {
             />
           )}
           <p className="text-center font-semibold">
-            {user.username || user.name}
+            @{user.username || user.name}
           </p>
           <p className="text-sm text-gray-600 text-center">{user.name}</p>
           <p className="text-xs text-gray-500 text-center">ID: {user.id}</p>
         </div>
       )}
 
-      {/* Tool Title */}
       <h2 className="text-xl font-semibold text-center">{tool}</h2>
 
-      {/* File Input */}
       <input
         type="file"
         accept="application/pdf"
@@ -118,10 +113,8 @@ export default function ToolAction({ tool, onBack, user }) {
         className="block w-full border rounded p-2"
       />
 
-      {/* Error Message */}
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      {/* Process Button */}
       <button
         onClick={handleProcess}
         disabled={loading}
@@ -132,9 +125,9 @@ export default function ToolAction({ tool, onBack, user }) {
         {loading ? "Processing..." : "Process PDF"}
       </button>
 
-      {/* Pro Modal */}
       {showProModal && (
         <ProModal
+          user={user}
           onClose={() => setShowProModal(false)}
           onUpgrade={() => {
             /* handle upgrade flow */
