@@ -1,3 +1,4 @@
+// src/components/ToolAction.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ProModal from "./ProModal";
@@ -23,31 +24,36 @@ export default function ToolAction({ tool, onBack, user }) {
   };
 
   const handleProcess = async () => {
+    console.log("▶️ handleProcess called with user:", user);
+
     if (!file) {
       setError("Please select a PDF file first.");
       return;
     }
 
-    if (!user || !user.id) {
-      setError("User data missing.");
-      return;
+    if (!user?.id) {
+      console.warn("⚠️ user.id missing, continuing without it");
     }
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("tool", tool);
-    formData.append("userId", user.id);
+    formData.append("userId", user?.id || "");
 
     try {
       setLoading(true);
       setError("");
 
-      const response = await axios.post(`${BASE_URL}/process`, formData, {
-        responseType: "blob",
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await axios.post(
+        `${BASE_URL}/process`,
+        formData,
+        {
+          responseType: "blob",
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       const blob = new Blob([response.data], { type: "application/pdf" });
       const url = window.URL.createObjectURL(blob);
@@ -60,7 +66,8 @@ export default function ToolAction({ tool, onBack, user }) {
     } catch (err) {
       console.error("Process error:", err);
       setError(
-        err.response?.data?.error || "Network error or server unavailable."
+        err.response?.data?.error ||
+        "Network error or server unavailable."
       );
     } finally {
       setLoading(false);
@@ -130,7 +137,7 @@ export default function ToolAction({ tool, onBack, user }) {
         <ProModal
           onClose={() => setShowProModal(false)}
           onUpgrade={() => {
-            // Handle upgrade flow here
+            /* handle upgrade flow */
           }}
         />
       )}
