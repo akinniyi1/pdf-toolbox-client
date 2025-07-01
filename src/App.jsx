@@ -1,42 +1,43 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import WelcomePreview from "./components/WelcomePreview";
 import ToolMenu from "./components/ToolMenu";
 import ToolAction from "./components/ToolAction";
-import ProModal from "./components/ProModal";
 
-function App() {
+const API = "https://pdf-toolbox-server.onrender.com";
+
+export default function App() {
   const [showPreview, setShowPreview] = useState(true);
   const [selectedTool, setSelectedTool] = useState(null);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.expand();
+    if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+      const tg = window.Telegram.WebApp.initDataUnsafe.user;
+      const id = `tg_${tg.id}`;
+      // upsert basic profile
+      axios.post(`${API}/user/${id}`, {
+        first_name: tg.first_name,
+        username: tg.username,
+      });
+      // fetch full record
+      axios.get(`${API}/user/${id}`).then((r) => {
+        setUser({ id, ...r.data });
+      });
     }
   }, []);
 
-  const handlePreviewEnd = () => setShowPreview(false);
-  const handleSelect = (tool) => setSelectedTool(tool);
-  const handleBack = () => setSelectedTool(null);
+  const onPreviewEnd = () => setShowPreview(false);
+  if (showPreview) return <WelcomePreview onEnd={onPreviewEnd} />;
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white font-sans">
-      <header className="text-center py-5 text-3xl font-bold text-blue-700 shadow-md">
-        PDF Toolbox Bot
-      </header>
+  if (selectedTool)
+    return (
+      <ToolAction
+        tool={selectedTool}
+        onBack={() => setSelectedTool(null)}
+        user={user}
+      />
+    );
 
-      <main className="max-w-3xl mx-auto px-4 mt-6">
-        {showPreview ? (
-          <WelcomePreview onEnd={handlePreviewEnd} />
-        ) : selectedTool ? (
-          <ToolAction tool={selectedTool} onBack={handleBack} />
-        ) : (
-          <ToolMenu onSelect={handleSelect} />
-        )}
-      </main>
-
-      <ProModal />
-    </div>
-  );
+  return <ToolMenu onSelect={setSelectedTool} user={user} />;
 }
-
-export default App;
