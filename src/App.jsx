@@ -13,7 +13,6 @@ export default function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // expand Telegram WebApp
     window.Telegram?.WebApp?.expand();
 
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
@@ -25,9 +24,11 @@ export default function App() {
         username: tgUser.username,
         avatar: tgUser.photo_url || "",
       };
-      // upsert to backend
+
+      // Upsert to backend
       axios.post(`${API_URL}/user/${id}`, profile).catch(console.error);
-      // fetch full user record
+
+      // Fetch their full record (including count/pro)
       axios
         .get(`${API_URL}/user/${id}`)
         .then((res) => setUser({ id, ...res.data }))
@@ -45,10 +46,13 @@ export default function App() {
 
   if (selectedTool) {
     return (
-      <ToolAction tool={selectedTool} onBack={handleBack} user={user} />
+      <ToolAction
+        tool={selectedTool}
+        onBack={handleBack}
+        user={user}
+      />
     );
   }
 
-  // ✅ user is now passed into ToolMenu
   return <ToolMenu onSelect={handleSelect} user={user} />;
 }
