@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+// src/components/ToolMenu.jsx
+import React from "react";
 
 const tools = [
   { name: "Merge PDF", icon: "🔗" },
@@ -10,25 +11,15 @@ const tools = [
   { name: "PDF to Image", icon: "🖼️" },
 ];
 
-export default function ToolMenu({ onSelect }) {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const tg = window.Telegram?.WebApp;
-    if (tg?.initDataUnsafe?.user) {
-      const { first_name, username, id, photo_url } = tg.initDataUnsafe.user;
-      setUser({ first_name, username, id, photo_url });
-    }
-  }, []);
-
+export default function ToolMenu({ onSelect, user }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4">
       {user && (
         <div className="bg-white rounded-xl p-4 shadow text-center">
-          {user.photo_url && (
+          {user.avatar && (
             <img
-              src={user.photo_url}
-              alt="profile"
+              src={user.avatar}
+              alt="avatar"
               className="w-16 h-16 mx-auto rounded-full mb-2"
             />
           )}
@@ -36,12 +27,12 @@ export default function ToolMenu({ onSelect }) {
             @{user.username || "Unknown"}
           </div>
           <div className="text-sm text-gray-500">
-            {user.first_name} | ID: {user.id}
+            {user.name || "No Name"} | ID: {user.id}
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-6">
         {tools.map((tool) => (
           <button
             key={tool.name}
